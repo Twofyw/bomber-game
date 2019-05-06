@@ -3,7 +3,7 @@ drop table if exists account;
 
 create table account (
 username varchar(30) BINARY not null,
-password varchar(100) not null,
+password varchar(100) not null
 );
 alter table account add primary key(username);
 
