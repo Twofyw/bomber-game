@@ -50,17 +50,17 @@ enum class PacketType : uint8_t {
     Password = 0x02,
     PasswordResponse = 0x03,
     Refuse = 0x04,
-    Configuration = 0x05,
-    HistoryUserName = 0x06,
-    History = 0x07,
+    OnlineList = 0x05,
+    UserName = 0x06,
+    // History = 0x07,`
     SyncEnd = 0x08,
-    TextUsername = 0x09,
-    Text = 0x0A,
-    FileName = 0x0B,
-    FileInProgress = 0x0C,
-    GroupTextUserlist = 0x0D,
-    FileEnd = 0x0E,
-    FileUsername = 0x0F,
+    SendInvit = 0x09,
+    RecvInvit = 0x0A,
+    InvitResponse = 0x0B,
+    Board = 0x0C,
+    SingleCoord = 0x0D,
+    DoubleCoord = 0x0E,
+    GameOver = 0x0F,
 };
 
 struct DataPacketHeader {
@@ -98,10 +98,11 @@ enum class StatusCode : int {
 enum class ResponseType : uint8_t {
     UserNotExist = 0,
     OK = 1,
-    ChangePassword = 2,
+    RefuseInvit = 2,
     WrongPassword = 3,
     ErrorOccurs = 4,
     AlreadyLoggedIn = 5,
+    Busy = 6,
 };
 
 // State machine definition
@@ -110,9 +111,11 @@ enum class SessionState : unsigned int {
     Acceptance,         // On acceptance, create a new client instance
     Error,
     WaitForPasswd,
-	WaitForNewPasswd,
+	// WaitForNewPasswd,
     ServerWaiting,      
-	WaitForText,
+	// WaitForText,
+    WaitForBoard,
+    InGame,
 };
 
 // Used as a buffer in transfer layer, instantiated in Clients
@@ -144,20 +147,31 @@ private:
 
 struct Message_To_App{
     PacketType type_;
+    ResponseType respond_;
     std::string user_name_;
     std::string password_; 
-    std::string media_text_;
-    std::vector<std::string> user_name_list_;
-    std::string file_name_;
-    std::string media_file_;
-    unsigned short config_; // 2 bytes in TransLayer
+    std::string user_name_b_;
+    int board_[10][10];
+    uint8_t plane_coord_[12];
+    int x, y;
+    int head_x, head_y;
+    int tail_x, tail_y;
+    // std::string media_text_;
+    // std::vector<std::string> user_name_list_;
+    // std::string file_name_;
+    // std::string media_file_;
+    // unsigned short config_; // 2 bytes in TransLayer
 };
 
 struct Message_To_Pre{
     PacketType type_;
     ResponseType respond_; 
-    int config_;
-    std::vector<std::string> history_;
+    // int config_;
+    std::vector<std::string> onlineuser_;
+    std::string user_name_a_;
+    int x,y;
+    int head_x, head_y;
+    int tail_x, tail_y;
 };
 
 // not sure if struct group_text should be kept or just use text[] instead ?
@@ -176,6 +190,13 @@ struct file{
 // #ifndef CLIENT_H
 // #define CLIENT_H
 
+struct Client;
+
+struct GameInfo {
+    Client* opponent_;
+    int win_board_[10][10];
+    uint8_t plane_coord_[12];
+};
 
 struct Client {
 
@@ -192,8 +213,10 @@ struct Client {
     int socket_fd;
     SessionState state = SessionState::Acceptance;
     std::string host_username_;
+    
     Message_To_App message_ptoa;
     Message_To_Pre message_atop;
+    GameInfo game_info_;
 
     // should be always greater than kHeaderSize (reset to this)
     // updated when packet is received and on state change

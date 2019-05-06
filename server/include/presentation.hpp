@@ -12,22 +12,29 @@ private:
     uint16_t packet_size;
 
     std::vector<uint8_t> pack_Response(Message_To_Pre message);
-    std::vector<uint8_t> pack_Config(Message_To_Pre message);
+    // std::vector<uint8_t> pack_Config(Message_To_Pre message);
     //client is sender client
     std::vector<uint8_t> pack_TextUserName(Client * client);    
     std::vector<uint8_t> pack_Text(Client * client);  
 
-    std::vector<uint8_t> pack_HistoryUserName(Message_To_Pre * message, std::string host_name);
-    std::vector<uint8_t> pack_History(Message_To_Pre * message);
+    std::vector<uint8_t> pack_Invit(Message_To_Pre message);
+    std::vector<uint8_t> pack_UserName(Message_To_Pre * message, std::string host_name);
+    std::vector<uint8_t> pack_Board(struct GameInfo);
+    std::vector<uint8_t> pack_SingleCoord(Message_To_Pre message);
+    std::vector<uint8_t> pack_DoubleCoord(Message_To_Pre message);
+    
+    // std::vector<uint8_t> pack_History(Message_To_Pre * message);
 
    // vector<uint8_t> pack_String(Message_To_Pre message);
 
-
-
-
     unsigned char * unpack_String(DataPacket packet);
-    Message_To_App  unpack_Configuration(DataPacket packet);
-    Message_To_App  unpack_GroupTextUserList(DataPacket packet);
+    ResponseType unpack_Response(DataPacket packet);
+    void plane(int curr, int *Plane[5]);
+    void unpack_Board(DataPacket packet, Message_To_App * message);
+    void unpack_SingleCoord(DataPacket packet, Message_To_App * message);
+    void unpack_DoubleCoord(DataPacket packet, Message_To_App * message);
+    // Message_To_App  unpack_Configuration(DataPacket packet);
+    // Message_To_App  unpack_GroupTextUserList(DataPacket packet);
 
 public:
     PresentationLayer() = default;

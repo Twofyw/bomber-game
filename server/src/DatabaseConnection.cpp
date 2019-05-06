@@ -1,8 +1,8 @@
 #include "../include/DatabaseConnection.hpp"
 
-const char* kDatabaseName = "db1551713";
-const char* kDatabaseUserId= "u1551713";
-const char* kDatabasePassword= "u1551713";
+const char* kDatabaseName = "TheBomber";
+const char* kDatabaseUserId= "cyanic";
+const char* kDatabasePassword= "1985727yyhstc";
 
 DatabaseConnection *DatabaseConnection::get_instance() // return a class instance	
 {
@@ -108,70 +108,6 @@ bool DatabaseConnection::check_password(string account_name, string password)
 		mysql_free_result(result);
 		return false;
 	}
-}
-
-void DatabaseConnection::push_message(string account_main, string account_sub, string message)
-{
-	// form command
-	string command = "insert into history values('";
-	//command += boost::lexical_cast<std::string>(id);
-	std::ostringstream o;
-	o << id;
-	command += o.str();
-	command += "', '" + account_main + "','" + account_sub + "','" + message + "')";
-
-	MysqlExecCommand(command);
-	id++;
-}
-
-vector<string> DatabaseConnection::retrive_message(string account_main)
-{
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-	vector<string> StringStack;
-
-	// form command
-	// get history max count
-	string command_pre = "select count(*) from history where (username_main = '" + account_main + "') or (username_sub = '" + account_main + "')";
-	result = MysqlExecCommand(command_pre);
-	row = mysql_fetch_row(result);
-	int history_max = atoi(row[0]);
-	mysql_free_result(result);
-
-	string command = "select * from history where (username_main = '" + account_main + "') or (username_sub = '" + account_main + "')";
-	// exec command and store return value
-	result = MysqlExecCommand(command);
-	int count_limit = retrive_history_count(account_main);
-	int k = 0;
-	while((row = mysql_fetch_row(result)) != NULL && k < history_max) {
-		k++;
-		if(k <= history_max - count_limit) continue;
-		StringStack.push_back(row[1]);
-		StringStack.push_back(row[2]);
-		StringStack.push_back(row[3]);
-		// message_all += row[3];
-        }
-
-	mysql_free_result(result);
-	// return message_all;
-	return StringStack;
-}
-
-int DatabaseConnection::retrive_history_count(string account_name)
-{
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-	
-	// cout << "debug" << endl;
-	int history_count = 100;
-	string command = "select * from account where username = '" + account_name + "'";
-
-	result = MysqlExecCommand(command);
-	row = mysql_fetch_row(result);
-	history_count = atoi(row[2]);
-
-	mysql_free_result(result);
-	return history_count;
 }
 
 bool DatabaseConnection::reset_password(string account_name, string password)

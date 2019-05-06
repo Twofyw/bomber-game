@@ -9,6 +9,9 @@
 # 
 all: 
 	g++ -g -std=c++11 -o server ./src/server.cpp ./src/types.cpp ./src/Log.cpp ./src/application.cpp ./src/transfer.cpp ./src/presentation.cpp ./src/DatabaseConnection.cpp -lmysqlclient -I /usr/include/ -L/usr/lib64/mysql
+
+clean:
+	$(RM) server
 # 
 # $(OBJ_LIB) : $(HEADER_LIB)
 # 
