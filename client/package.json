@@ -1,0 +1,50 @@
+{
+  "name": "sample-chat-electron",
+  "version": "0.0.1",
+  "description": "Socket.io based chat server and client, implemented in NodeJS",
+  "main": "app.js",
+  "scripts": {
+    "start": "node ./node_modules/.bin/electron .",
+    "server": "node ./server",
+    "test": "echo \"Error: no test specified\" && exit 0",
+    "pack:all": "npm run pack:win32 && npm run pack:darwin",
+    "pack:win32": "./node_modules/.bin/electron-packager . --icon=client/icon.ico --overwrite=true --arch=ia32 --platform=win32  --out=build  --version-string.CompanyName=\"Luis Eduardo Brito\" --version-string.ProductName=\"SampleChat\" --version-string.FileDescription=\"A simple socket.io sample backed by Electron platform\" --asar=true",
+    "pack:darwin": "./node_modules/.bin/electron-packager . --icon=./client/icon --overwrite=true --arch=all --platform=darwin --out=build",
+    "dist:all": "npm run dist:darwin",
+    "dist:darwin": "rm build/**.dmg && ./node_modules/.bin/appdmg ./config/appdmg.json build/SampleChat.dmg -v",
+    "postinstall": "./node_modules/.bin/electron-rebuild && ./node_modules/.bin/bower install"
+  },
+  "engines": {
+    "node": ">=5.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luiseduardobrito/mc714-1s2016-lista3.git"
+  },
+  "build": {
+    "app-bundle-id": "me.luiseduardobrito.simplechat",
+    "app-category-type": "public.app-category.social-networking",
+    "iconUrl": "./client/icon.ico"
+  },
+  "author": "Luis <luiseduardo14@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/luiseduardobrito/mc714-1s2016-lista3/issues"
+  },
+  "homepage": "https://github.com/luiseduardobrito/mc714-1s2016-lista3#readme",
+  "dependencies": {
+    "bower": "^1.8.8",
+    "electron-packager": "^6.0.0",
+    "electron-prebuilt": "^0.37.3",
+    "electron-rebuild": "^1.8.4",
+    "express": "^4.13.4",
+    "hat": "0.0.3",
+    "network-byte-order": "^0.2.0",
+    "socket.io": "^1.7.4",
+    "socket.io-client": "^2.2.0"
+  },
+  "devDependencies": {
+    "appdmg": "^0.3.6"
+  },
+  "__npminstall_done": false
+}
