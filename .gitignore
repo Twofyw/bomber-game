@@ -118,3 +118,5 @@ typings/
 *.exe
 *.out
 *.app
+
+.vscode
