@@ -1,8 +1,8 @@
 #include "../include/DatabaseConnection.hpp"
 
-const char* kDatabaseName = "TheBomber";
-const char* kDatabaseUserId= "cyanic";
-const char* kDatabasePassword= "1985727yyhstc";
+const char* kDatabaseName = "db1551713";
+const char* kDatabaseUserId= "u1551713";
+const char* kDatabasePassword= "u1551713";
 
 DatabaseConnection *DatabaseConnection::get_instance() // return a class instance	
 {
