@@ -3,6 +3,7 @@
 
 -- use Simple_chat_room;
 use db1551713;
+drop table if exists history;
 drop table if exists account;
 
 create table account (
@@ -17,7 +18,7 @@ insert into account(username, password) values('Twofyw', MD5('123456'));
 insert into account(username, password) values('YYYuna', MD5('123456'));
 insert into account(username, password) values('novatez', MD5('123456'));
 
-drop table if exists history;
+--drop table if exists history;
 create table history (
 message_id bigint unsigned,
 username_main varchar(30) BINARY not null, 
