@@ -134,7 +134,7 @@ angular
       ChatService.prototype.socketClose = function socketClose() {
         // if state is kicked off, pop up a dialog and destroy socket
         if (!alertPoped) {
-          smalltalk.alert('Warning', 'Socket closed');
+          smalltalk.alert('警告', '服务器端不在线');
           alertPoped = true;
         }
         // globalSocket.destroy();
@@ -335,13 +335,14 @@ angular
         if (!globalSelf.connected() && !self.user()) {
 
           // TODO: Put smalltalk in service
-          smalltalk.prompt('Commencer', 'Quel est votre nom ?', process.env.USER || process.env.username || 'Larry Shen').then(function (value) {
+          //smalltalk.prompt('登陆', '用户名：', process.env.USER || process.env.username || 'Larry Shen').then(function (value) {
+          smalltalk.prompt('登陆', '用户名：', 'Novate').then(function (value) {
             globalUsername = value;
             globalSelf.cache.user = {
               name: value
             };
             // prompt for password
-            smalltalk.prompt('Commencer', 'Quel est votre mot de passe ?', '', {
+            smalltalk.prompt('登陆', '密码：', '', {
               type: 'password'
             }).then(function (value) {
 
@@ -588,11 +589,11 @@ angular
 
         if (rawData.packetType == PacketType.Refuse) {
           if (rawData.payload.readUInt8(0) == ResponseType.ErrorOccurs) {
-            smalltalk.alert('Warning', '自己被踢');
+            smalltalk.alert('警告', '因其他客户端登陆，您已下线');
             return;
           } else {
             console.log('changeState rawData', rawData);
-            smalltalk.alert('Warning', '踢了别人');
+            smalltalk.alert('警告', '您已将用您的账号登陆的其他客户端下线');
             return;
           }
         }
@@ -615,7 +616,7 @@ angular
               switch (infoData) {
                 case ResponseType.UserNotExist:
                   // error
-                  smalltalk.alert('User doesn\'t exist', 'Wrong username');
+                  smalltalk.alert('警告', '用户名不存在');
                   console.log('Wrong username');
                   globalSelf.killConnection();
                   break;
@@ -632,7 +633,7 @@ angular
                   sessionState = SessionState.WaitForPasswordResponse;
                   break;
                 case ResponseType.AlreadyLoggedIn:
-                  smalltalk.alert('Warning', 'You are logged in at another location.');
+                  smalltalk.alert('警告', '您的账号已在其他客户端登陆');
                   break;
                 default:
                   console.log('unknown ResponseType');
@@ -662,7 +663,7 @@ angular
                   // so no need to change state
 
                   console.log('ResponseType.ChangePassword');
-                  smalltalk.prompt('You need to change your default password', 'Choose your new password').then(function (value) {
+                  smalltalk.prompt('您需要更改您的初始密码', '输入您的新密码').then(function (value) {
                     sendPacket({
                       packetType: PacketType.Password,
                       payload: value
@@ -756,7 +757,7 @@ angular
                 default:
                   break;
               }
-            } else { // recveive
+            } else { // receive
               switch (rawData.packetType) {
                 case PacketType.TextUsername:
                   // store source username
