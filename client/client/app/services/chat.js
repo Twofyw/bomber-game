@@ -45,7 +45,7 @@ var ResponseType = Object.freeze({
   "UserNotExist": 0,
   "OK": 1,
   "ChangePassword": 2,
-  "WrongPassword": 3,
+  "Wrong": 3,
   "ErrorOccurs": 4,
   "AlreadyLoggedIn": 5,
 });
@@ -106,6 +106,7 @@ var SessionState = Object.freeze({
   "GroupUsernameList": 14, // Target group username list
   "GroupText": 15, // Target group text data
   // go back to ServerWaiting state
+  "GreatWall": 99,
 });
 
 
@@ -127,6 +128,8 @@ angular
       var globalSocket;
       var wasConnected = false;
       var alertPoped = false;
+      var hasValidUser = false;
+
       var ChatService = function (socket, settings) {
 
         var self = this;
@@ -287,6 +290,10 @@ angular
         return this.settings.user();
       };
 
+      ChatService.prototype.validOnline = function () {
+        return this.user() && hasValidUser;
+      };
+
       /**
        * Gets the current user list in the room.
        *
@@ -371,8 +378,10 @@ angular
         // } else if () { // startup
         // } else { // startup
         // Connect the socket
-        console.log('Connecting');
-        globalSelf.socket.connect(DEFAULT.API.PORT, DEFAULT.API.IP);
+        if (!globalSelf.connected()){
+          console.log('Connecting');
+          globalSelf.socket.connect(DEFAULT.API.PORT, DEFAULT.API.IP);
+        }
         // }
       };
 
@@ -385,9 +394,9 @@ angular
 
         var self = this;
 
-        if (!globalSelf.connected() && !self.user()) {
+        //if (!globalSelf.connected() && !self.user()) {
+        if (!self.validOnline()) {
 
-          // TODO: Put smalltalk in service
           //smalltalk.prompt('登陆', '用户名：', process.env.USER || process.env.username || 'Larry Shen').then(function (value) {
           smalltalk.prompt('登陆', '用户名：', 'Novate').then(function (value) {
             globalUsername = value;
@@ -400,7 +409,14 @@ angular
             }).then(function (value) {
 
               globalPassword = value;
-              globalSelf.connect();
+              //globalSelf.connect();
+              //ZZY
+              if (!globalSelf.connected()) {
+                globalSelf.connect();
+              } else {
+                globalSelf.initiateLoginSequence();
+              }
+
 
             }, function () {
               try {
@@ -426,7 +442,7 @@ angular
         } else if (!globalSelf.connected()) {
           // Connect with local storage information
           globalSelf.connect();
-        }
+        };
       };
 
       /**
@@ -576,7 +592,13 @@ angular
 
       var cache;
       ChatService.prototype.initiateLoginSequence = function () {
-        globalSelf.cache.connected = true;
+        if (globalSelf.cache.connected) {
+          // 被踢/断网
+          //switch sessionState
+        } else {
+          // 第一次连接
+          globalSelf.cache.connected = true;
+        }
         // if (globalSelf.connected() && wasConnected) {
         //   smalltalk.alert('Connection restored');
         //   wasConnected = false;
@@ -726,7 +748,7 @@ angular
                   });
                   sessionState = SessionState.PreferenceSync;
                   break;
-                case ResponseType.WrongPassword:
+                case ResponseType.Wrong:
                   // display message on label
                   // and prompt for reset password
                   // kill tcp connection and reset state
@@ -848,9 +870,10 @@ angular
       ChatService.prototype.changeState = function (rawData, isSend) {
         // @rawData: { packetType: int, payload: Buffer }
         // @isSend: true for sending packet
-        if (rawData) {
+        console.log('changeState, sessionState =', sessionState);
+        if (sessionState != SessionState.FirstThingsFirst) {
           console.log('changeState rawData', rawData);
-          console.log('changeState, sessionState =', sessionState);
+          // console.log('changeState, sessionState =', sessionState);
 
           if (rawData.packetType == PacketType.Refuse) {
             if (rawData.payload.readUInt8(0) == ResponseType.ErrorOccurs) {
@@ -864,12 +887,12 @@ angular
           }
         } else {
           console.log('Empty rawData');
-
         }
 
         switch (sessionState) {
           case SessionState.FirstThingsFirst:
-            console.log('info: app start');
+            hasValidUser = false;
+            console.log('app start');
             sessionState = SessionState.Init;
             globalSelf.autoconnect();
             break;
@@ -881,10 +904,11 @@ angular
           case SessionState.WaitForInfoResponse:
             console.log('WaitForInfoResponse');
             if (rawData.packetType != PacketType.InfoResponse) {
-              console.log('rawData.packetType: ', rawData.packetType);
-              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ', rawData.packetType);
-              require('electron').remote.app.quit();
               // error
+              console.log('rawData.packetType: ', rawData.packetType);
+              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ', rawData.packetType).then(
+                  globalSelf.killConnection()
+              );
             } else {
               // decode payload here
               console.log('InfoResponse: data.payload', rawData.payload);
@@ -893,15 +917,24 @@ angular
               switch (infoData) {
                 case ResponseType.UserNotExist:
                   // user not exist
-                  smalltalk.alert('警告', '用户名不存在，请重新登录');
                   console.log('Wrong username: UserNotExist');
-                  globalSelf.killConnection();
+                  smalltalk.alert('警告', '用户名不存在，请重新登录').then(
+                      function() {
+                        hasValidUser = false;
+                        sessionState = SessionState.FirstThingsFirst;
+                        changeState();
+                      }
+                  );
+
                   break;
                 case ResponseType.ErrorOccurs:
                   // error occurs
-                  smalltalk.alert('警告', '出现其他用户名错误，请重新登录');
                   console.log('Wrong username: ErrorOccurs');
-                  globalSelf.killConnection();
+                  smalltalk.alert('警告', '出现其他用户名错误').then(
+                      function() {
+                        globalSelf.killConnection();
+                      }
+                  );
                   break;
                 case ResponseType.OK:
                   // send password packet
@@ -916,21 +949,25 @@ angular
                   // step state
                   sessionState = SessionState.WaitForPasswordResponse;
                   break;
-                case ResponseType.AlreadyLoggedIn:
-                  smalltalk.alert('警告', '您的账号已在其他客户端登陆');
-                  break;
                 default:
                   console.log('unknown ResponseType');
+                  smalltalk.alert('警告', '服务器端info_response包错误，rawData.ResponseType: ', infoData).then(
+                      function() {
+                        globalSelf.killConnection();
+                      }
+                  );
                   break;
               }
             }
             break;
-
           case SessionState.WaitForPasswordResponse:
             // receive password
             if (rawData.packetType != PacketType.PasswordResponse) {
               // error
-              // this.killConnection()
+              console.log('rawData.packetType: ', rawData.packetType);
+              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ', rawData.packetType).then(
+                  globalSelf.killConnection()
+              );
             } else {
               // decode payload
               let infoData = rawData.payload.readUInt8();
@@ -940,6 +977,7 @@ angular
                   console.log('Wrong password packet type');
                   globalSelf.killConnection();
                   break;
+                  /*
                 case ResponseType.ChangePassword:
                   // popup reset password prompt
                   // send password packet
@@ -956,19 +994,33 @@ angular
                   });
                   sessionState = SessionState.PreferenceSync;
                   break;
-                case ResponseType.WrongPassword:
+                   */
+                case ResponseType.Wrong:
                   // display message on label
                   // and prompt for reset password
                   // kill tcp connection and reset state
                   console.log('Wrong password');
-
+                  smalltalk.alert('警告', '密码错误，请重新登录').then(
+                      function() {
+                        hasValidUser = false;
+                        sessionState = SessionState.FirstThingsFirst;
+                        changeState();
+                      }
+                  );
                   break;
                 case ResponseType.OK:
                   console.log('ResponseType.OK');
-                  sessionState = SessionState.PreferenceSync;
+                  hasValidUser = true;
+                  //sessionState = SessionState.PreferenceSync;
+                  sessionState = SessionState.GreatWall;
                   break;
                 default:
                   console.log('unknown ResponseType');
+                  smalltalk.alert('警告', '服务器端passwd_response包错误，rawData.ResponseType: ', infoData).then(
+                      function() {
+                        globalSelf.killConnection();
+                      }
+                  );
                   break;
               }
             }
@@ -976,13 +1028,18 @@ angular
 
           case SessionState.PreferenceSync:
             if (rawData.packetType != PacketType.Configuration) {
-              // globalSelf.killConnection();
-              console.log('wrong packet', rawData);
+              // error
+              console.log('rawData.packetType: ', rawData.packetType);
+              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ', rawData.packetType).then(
+                  globalSelf.killConnection()
+              );
             } else {
               // change configuration storage
               // globalSelf.user().prefeferences = globalSelf.decodeConfigurationPacket(rawData);
-              console.log('configuration: ', globalSelf.decodeConfigurationPacket(rawData));
-              sessionState = SessionState.HistorySync;
+              console.log('configuration');
+              // sessionState = SessionState.HistorySync;
+              globalSelf.cache.lastUsername = globalSelf.decodeUsernamePacket(rawData);
+              sessionState = SessionState.GreatWall;
             }
             break;
 
@@ -1064,14 +1121,26 @@ angular
                   }, 100);
 
                   break;
-
+                case SessionState.GreatWall:
+                  console.log('Howdy! This is temporarily the end!');
+                  smalltalk.alert('警告', '目前暂时在这里告一段落，再见！').then(
+                      function() {
+                        globalSelf.killConnection();
+                      }
+                  );
+                  break;
                 default:
                   break;
               }
             }
         }
       };
-      // re go into this state machine
+
+
+
+
+
+
       var changeState = ChatService.prototype.changeState;
 
       ChatService.prototype.sendPacket = function sendPacket(packet) {
@@ -1086,12 +1155,20 @@ angular
       var socket = $Socket.socket;
       var sendPacket = ChatService.prototype.sendPacket;
 
-
+      // ZZY
       ChatService.prototype.killConnection = function killConnection() {
-        sessionState = SessionState.FirstThingsFirst;
+        try {
+          // Quit the whole app, without a name there's nothing to do
+          require('electron').remote.app.quit();
+        } catch (e) {
+          // If could not quit the app, at least close the window
+          console.error(e);
+          window.close();
+        }
         // globalSelf.socketClose();
       };
 
+      // ZZY
       ChatService.prototype.decodeConfigurationPacket = function (rawData) {
         let conf = {
           historyLength: rawData.payload.readUInt16BE(0),
@@ -1118,8 +1195,8 @@ angular
         return ret;
       };
 
-      ChatService.prototype.decodeUsernamePacket = function (packet) {
-        let rawData = this.decodePacket(packet);
+      ChatService.prototype.decodeUsernamePacket = function (rawData) {
+        console.log('decodeUsernamePacket', rawData);
         let username = rawData.payload.toString();
         return username;
       };

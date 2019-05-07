@@ -68,9 +68,11 @@ void ApplicationLayer::MessageToApp(Client *client_name_)
                                        // account not exists
                                         respond_->type_ = PacketType::InfoResponse;
                                         respond_->respond_ = ResponseType::UserNotExist;
-                                        client_name_->state = SessionState::Error;
+                                        // client_name_->state = SessionState::Error;
+                                        client_name_->state = SessionState::WaitForPasswd;
                                         LOG(Error) << "User not Exists: " << message_->user_name_ << std::endl;
                                         PreLayerInstance.pack_Message(client_name_);
+                                        client_name_->state = SessionState::Acceptance;
                                         break;
                                }
                         }
@@ -118,6 +120,7 @@ void ApplicationLayer::MessageToApp(Client *client_name_)
                                         respond_->type_ = PacketType::PasswordResponse;
                                         respond_->respond_ = ResponseType::WrongPassword;
                                         PreLayerInstance.pack_Message(client_name_);
+                                        client_name_->state = SessionState::Acceptance;
                                         break;
                                 }
                                 break;

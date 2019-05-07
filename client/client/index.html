@@ -15,7 +15,7 @@
 <body style="-webkit-app-region: drag" ng-controller="BodyCtrl">
 
 <!-- Angular Main View -->
-<div class="ui" ng-show="$Chat.user()" ng-view></div>
+<div class="ui" ng-show="$Chat.validOnline()" ng-view></div>
 
 <!-- Socket.io Client -->
 <!-- <script src="./components/socket.io-client/dist/socket.io.js"></script> -->
