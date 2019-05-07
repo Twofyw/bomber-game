@@ -114,7 +114,7 @@ void ApplicationLayer::MessageToApp(Client *client_name_)
                                 case false: {
                                         // password error
                                         LOG(Info) << "Recv Wrong Password" << endl;
-                                        client_name_->state = SessionState::Error;
+                                        client_name_->state = SessionState::WaitForPasswd;
                                         respond_->type_ = PacketType::PasswordResponse;
                                         respond_->respond_ = ResponseType::WrongPassword;
                                         PreLayerInstance.pack_Message(client_name_);
