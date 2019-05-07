@@ -69,7 +69,7 @@ void ApplicationLayer::MessageToApp(Client *client_name_)
                                         respond_->type_ = PacketType::InfoResponse;
                                         respond_->respond_ = ResponseType::UserNotExist;
                                         client_name_->state = SessionState::Error;
-                                        LOG(Error) << "User not Exists" << std::endl;
+                                        LOG(Error) << "User not Exists: " << message_->user_name_ << std::endl;
                                         PreLayerInstance.pack_Message(client_name_);
                                         break;
                                }

@@ -1,4 +1,5 @@
 // used as the first byte of data packets
+/*
 var PacketType = Object.freeze({
   "Info": 0x00,
   "InfoResponse": 0x01,
@@ -17,6 +18,27 @@ var PacketType = Object.freeze({
   "FileEnd": 0x0E,
   "FileUsername": 0x0F,
 })
+*/
+
+// ZZY
+var PacketType = Object.freeze({
+  "Info": 0x00,
+  "InfoResponse": 0x01,
+  "Password": 0x02,
+  "PasswordResponse": 0x03,
+  "Refuse": 0x04,
+  "Configuration": 0x05,
+  "HistoryUserName": 0x06,
+  "History": 0x07,
+  "SyncEnd": 0x08,
+  "TextUsername": 0x09,
+  "Text": 0x0A,
+  "FileName": 0x0B,
+  "FileInProgress": 0x0C,
+  "GroupTextUserlist": 0x0D,
+  "FileEnd": 0x0E,
+  "FileUsername": 0x0F,
+});
 
 // Server response type
 var ResponseType = Object.freeze({
@@ -26,8 +48,9 @@ var ResponseType = Object.freeze({
   "WrongPassword": 3,
   "ErrorOccurs": 4,
   "AlreadyLoggedIn": 5,
-})
+});
 
+/*
 // TODO: adapt to client states
 // State machine definition
 // Defined almost sequentially. Actions corresponding to a state are in comments.
@@ -53,8 +76,37 @@ var SessionState = Object.freeze({
   "GroupUsernameList": 14, // Target group username list
   "GroupText": 15, // Target group text data
   // go back to ServerWaiting state
-})
+});
+*/
 
+// Modified by ZZY.
+// TODO: adapt to client states
+// State machine definition
+// Defined almost sequentially. Actions corresponding to a state are in comments.
+var SessionState = Object.freeze({
+  "FirstThingsFirst": 20,
+  "Init": 0, // send check
+  "WaitForInfoResponse": 1, // Match user in database, password not received yet
+  // If user exists, send a response
+  "WaitForPasswordResponse": 2, // Send UserCheck response
+  "UserExists": 3, // Branch #1, receive password and match password in database
+  "PasswordReset": 4, // First login. Receive new password and update database
+  "AlreadyLoggedIn": 5, // Kick off the logged in session
+  "PreferenceSync": 6, // Merge #1, send preference
+  "HistorySync": 7, // Send history
+  "ClientWaiting": 8,
+  // Branch #2 and Merge #2, branch according to the media_type
+  // of the next packet (either received or sent).
+  // Send has priority over read.
+  "TextUsername": 9, // Target text username
+  "Text": 10, // Text data
+  "FileUsername": 11, // Target file username
+  "FileName": 12,
+  "FileInProgress": 13, // Until a FileEnd packet is received
+  "GroupUsernameList": 14, // Target group username list
+  "GroupText": 15, // Target group text data
+  // go back to ServerWaiting state
+});
 
 
 // data naming:
@@ -70,7 +122,7 @@ angular
        *
        * @constructor
        */
-      var sessionState = SessionState.Init;
+      var sessionState = SessionState.FirstThingsFirst;
       var globalSelf;
       var globalSocket;
       var wasConnected = false;
@@ -105,7 +157,9 @@ angular
         globalSelf.socket.on('close', globalSelf.socketClose);
 
         // Start the authentication
-        globalSelf.autoconnect();
+        // globalSelf.autoconnect();
+        // ZZY
+        globalSelf.changeState();
       };
 
       /**
@@ -331,7 +385,6 @@ angular
 
         var self = this;
 
-        // Connect the chat using the OS user name
         if (!globalSelf.connected() && !self.user()) {
 
           // TODO: Put smalltalk in service
@@ -429,7 +482,7 @@ angular
           }, 100);
         } else {
           // warn the user it's not connected
-          smalltalk.alert('Warning', 'Not connected.');
+          smalltalk.alert('警告', '连接未建立');
         }
       };
 
@@ -558,7 +611,7 @@ angular
           // (ack || angular.noop)();
 
         });
-      }
+      };
 
       ChatService.prototype.constructPacket = function constructPacket(rawData) {
         // pack data into a packet
@@ -580,7 +633,8 @@ angular
       }
       var constructPacket = ChatService.prototype.constructPacket;
 
-      // Init: send check packet
+      // Init: send check packet, original one.
+      /*
       ChatService.prototype.changeState = function (rawData, isSend) {
         // @rawData: { packetType: int, payload: Buffer }
         // @isSend: true for sending packet
@@ -788,6 +842,237 @@ angular
         }
       };
       var changeState = ChatService.prototype.changeState;
+      */
+
+      // Modified by ZZY
+      ChatService.prototype.changeState = function (rawData, isSend) {
+        // @rawData: { packetType: int, payload: Buffer }
+        // @isSend: true for sending packet
+        if (rawData) {
+          console.log('changeState rawData', rawData);
+          console.log('changeState, sessionState =', sessionState);
+
+          if (rawData.packetType == PacketType.Refuse) {
+            if (rawData.payload.readUInt8(0) == ResponseType.ErrorOccurs) {
+              smalltalk.alert('警告', '因其他客户端登陆，您已下线');
+              return;
+            } else {
+              console.log('changeState rawData', rawData);
+              smalltalk.alert('警告', '您已将用您的账号登陆的其他客户端下线');
+              return;
+            }
+          }
+        } else {
+          console.log('Empty rawData');
+
+        }
+
+        switch (sessionState) {
+          case SessionState.FirstThingsFirst:
+            console.log('info: app start');
+            sessionState = SessionState.Init;
+            globalSelf.autoconnect();
+            break;
+          case SessionState.Init:
+            console.log('info', rawData);
+            sendPacket(rawData);
+            sessionState = SessionState.WaitForInfoResponse;
+            break;
+          case SessionState.WaitForInfoResponse:
+            console.log('WaitForInfoResponse');
+            if (rawData.packetType != PacketType.InfoResponse) {
+              console.log('rawData.packetType: ', rawData.packetType);
+              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ', rawData.packetType);
+              require('electron').remote.app.quit();
+              // error
+            } else {
+              // decode payload here
+              console.log('InfoResponse: data.payload', rawData.payload);
+              console.log('rawData', rawData);
+              let infoData = rawData.payload.readUInt8(0);
+              switch (infoData) {
+                case ResponseType.UserNotExist:
+                  // user not exist
+                  smalltalk.alert('警告', '用户名不存在，请重新登录');
+                  console.log('Wrong username: UserNotExist');
+                  globalSelf.killConnection();
+                  break;
+                case ResponseType.ErrorOccurs:
+                  // error occurs
+                  smalltalk.alert('警告', '出现其他用户名错误，请重新登录');
+                  console.log('Wrong username: ErrorOccurs');
+                  globalSelf.killConnection();
+                  break;
+                case ResponseType.OK:
+                  // send password packet
+                  // data: password
+                  console.log('Username OK');
+                  let passwordPacket = {
+                    packetType: PacketType.Password,
+                    payload: globalPassword
+                  };
+                  sendPacket(passwordPacket);
+
+                  // step state
+                  sessionState = SessionState.WaitForPasswordResponse;
+                  break;
+                case ResponseType.AlreadyLoggedIn:
+                  smalltalk.alert('警告', '您的账号已在其他客户端登陆');
+                  break;
+                default:
+                  console.log('unknown ResponseType');
+                  break;
+              }
+            }
+            break;
+
+          case SessionState.WaitForPasswordResponse:
+            // receive password
+            if (rawData.packetType != PacketType.PasswordResponse) {
+              // error
+              // this.killConnection()
+            } else {
+              // decode payload
+              let infoData = rawData.payload.readUInt8();
+              switch (infoData) {
+                case ResponseType.ErrorOccurs:
+                  // error
+                  console.log('Wrong password packet type');
+                  globalSelf.killConnection();
+                  break;
+                case ResponseType.ChangePassword:
+                  // popup reset password prompt
+                  // send password packet
+                  // continue waiting for password response
+                  // so no need to change state
+
+                  console.log('ResponseType.ChangePassword');
+                  smalltalk.prompt('您需要更改您的初始密码', '输入您的新密码').then(function (value) {
+                    sendPacket({
+                      packetType: PacketType.Password,
+                      payload: value
+                    });
+                    console.log('password reset!');
+                  });
+                  sessionState = SessionState.PreferenceSync;
+                  break;
+                case ResponseType.WrongPassword:
+                  // display message on label
+                  // and prompt for reset password
+                  // kill tcp connection and reset state
+                  console.log('Wrong password');
+
+                  break;
+                case ResponseType.OK:
+                  console.log('ResponseType.OK');
+                  sessionState = SessionState.PreferenceSync;
+                  break;
+                default:
+                  console.log('unknown ResponseType');
+                  break;
+              }
+            }
+            break;
+
+          case SessionState.PreferenceSync:
+            if (rawData.packetType != PacketType.Configuration) {
+              // globalSelf.killConnection();
+              console.log('wrong packet', rawData);
+            } else {
+              // change configuration storage
+              // globalSelf.user().prefeferences = globalSelf.decodeConfigurationPacket(rawData);
+              console.log('configuration: ', globalSelf.decodeConfigurationPacket(rawData));
+              sessionState = SessionState.HistorySync;
+            }
+            break;
+
+          case SessionState.HistorySync:
+            switch (rawData.packetType) {
+              case PacketType.HistoryUserName:
+                // read the byte at index 3
+                // 0: Host2User, 1: User2Host
+                // store username
+                let data = globalSelf.decodeHistoryUsernamePacket(rawData);
+                if (data.direction == 0) {
+                  globalSelf.cache.lastUsername = globalUsername;
+                } else {
+                  globalSelf.cache.lastUsername = data.username;
+                }
+                // sessionState = SessionState.History;
+                break;
+
+              case PacketType.History:
+                let historyText = globalSelf.decodeTextPacket(rawData);
+                // update view to show chat history
+
+                $rootScope.$apply(function () {
+                  globalSelf.cache.messages.push({
+                    username: globalSelf.cache.lastUsername,
+                    body: historyText,
+                  });
+                });
+
+                setTimeout(function () {
+                  jQuery(".messages").getNiceScroll(0).resize();
+                  return jQuery(".messages").getNiceScroll(0).doScrollTop(999999, 999);
+                }, 100);
+                break;
+
+              case PacketType.SyncEnd:
+                sessionState = SessionState.ClientWaiting;
+                break;
+
+              default:
+                break;
+            }
+            break;
+
+          case SessionState.ClientWaiting:
+            if (isSend) {
+              switch (rawData.packetType) {
+                case PacketType.TextUsername:
+                  globalSelf.sendPacket(rawData);
+                  break;
+                case PacketType.Text:
+                  // send, assume success
+                  // rawData should be packaged at higher levels
+                  globalSelf.sendPacket(rawData);
+                  sessionState = SessionState.ClientWaiting;
+                default:
+                  break;
+              }
+            } else { // receive
+              switch (rawData.packetType) {
+                case PacketType.TextUsername:
+                  // store source username
+                  globalSelf.cache.lastUsername = rawData.payload;
+                  break;
+                case PacketType.Text:
+                  // display chat
+                  let text = globalSelf.decodeTextPacket(rawData);
+                  // update view to show chat history
+                  $rootScope.$apply(function () {
+                    globalSelf.cache.messages.push({
+                      username: globalSelf.cache.lastUsername,
+                      body: text,
+                    });
+                  });
+
+                  setTimeout(function () {
+                    jQuery(".messages").getNiceScroll(0).resize();
+                    return jQuery(".messages").getNiceScroll(0).doScrollTop(999999, 999);
+                  }, 100);
+
+                  break;
+
+                default:
+                  break;
+              }
+            }
+        }
+      };
+      // re go into this state machine
+      var changeState = ChatService.prototype.changeState;
 
       ChatService.prototype.sendPacket = function sendPacket(packet) {
         // this method also handles packet being rawData
@@ -803,7 +1088,7 @@ angular
 
 
       ChatService.prototype.killConnection = function killConnection() {
-        sessionState = SessionState.Init;
+        sessionState = SessionState.FirstThingsFirst;
         // globalSelf.socketClose();
       };
 

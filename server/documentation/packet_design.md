@@ -1,27 +1,25 @@
-
-
 # Simple Chat Room Package Design  
 
 ## Frame type (all)
 
-|  message meta type  | descriptor |
-| :-----------------: | :--------: |
-|        info         |    0x00    |
-|    info_respond     |    0x01    |
-|  passwd/new_passwd  |    0x02    |
-|   passwd_respond    |    0x03    |
-|       refuse        |    0x04    |
-|      configure      |    0x05    |
-|  history_user_name  |    0x06    |
-|       history       |    0x07    |
-| synchronization_end |    0x08    |
-|      text_user      |    0x09    |
-|        text         |    0x0A    |
-|      file_name      |    0x0B    |
-|   file_in_progress  |    0x0C    |
-| group_text_userlist |    0x0D    |
-|       file_end      |    0x0E    |
-|      file_username      |    0x0F    |
+| frame type | descriptor |
+| :--------: | :--------: |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
+|            |            |
 
 ------------------------
 
@@ -29,13 +27,13 @@
 
 ### Frame types(Log In)
 
-| message meta type | descriptor |
-| :---------------: | :--------: |
-|                   |            |
-|                   |            |
-|                   |            |
-|                   |            |
-|                   |            |
+|   frame type    | descriptor |
+| :-------------: | :--------: |
+|      info       |    0x00    |
+|  info_response  |    0x01    |
+|     passwd      |    0x02    |
+| passwd_response |    0x03    |
+|     refuse      |    0x04    |
 
 ------------------------
 
@@ -96,16 +94,14 @@
 
 ## Synchronization
 
-### Frame types(Synchronization)
+### Frame types
 
 | frame type | descriptor |
 | :--------: | :--------: |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
+|  UserName  |    0x06    |
+|  SyncEnd   |    0x08    |
 
-#### OnlineList -> UserName  `0x06`
+#### UserName  `0x06`
 
 |  0   |            1, 2            |         3 ... 31         |
 | :--: | :------------------------: | :----------------------: |
@@ -127,6 +123,17 @@
 
 ## Game
 
+**Frame types**
+
+|  frame type   | descriptor |
+| :-----------: | :--------: |
+|   SendInvit   |    0x09    |
+|   RecvInvit   |    0x0A    |
+| InvitResponse |    0x0B    |
+|     Board     |    0x0C    |
+|  SingleCoord  |    0x0D    |
+|  DoubleCoord  |    0x0E    |
+|   GameOver    |    0x0F    |
 
 **SendInvit** **0x09**
 
@@ -185,3 +192,6 @@
 | :--: | :--: | :--: |
 | 0x0F |  0   | null |
 
+>If you win, your client will send frame GameOver to the server;
+>
+>If you lose, your client will recv frame GameOver from the server.
