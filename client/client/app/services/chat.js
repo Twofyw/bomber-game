@@ -84,7 +84,6 @@ var SessionState = Object.freeze({
 // State machine definition
 // Defined almost sequentially. Actions corresponding to a state are in comments.
 var SessionState = Object.freeze({
-  "FirstThingsFirst": 20,
   "Init": 0, // send check
   "WaitForInfoResponse": 1, // Match user in database, password not received yet
   // If user exists, send a response
@@ -106,6 +105,8 @@ var SessionState = Object.freeze({
   "GroupUsernameList": 14, // Target group username list
   "GroupText": 15, // Target group text data
   // go back to ServerWaiting state
+  // ZZY
+  "FirstThingsFirst": 20,
   "GreatWall": 99,
 });
 
@@ -123,13 +124,14 @@ angular
        *
        * @constructor
        */
+      var Chat = this;
       var sessionState = SessionState.FirstThingsFirst;
       var globalSelf;
       var globalSocket;
-      var wasConnected = false;
-      var alertPoped = false;
-      var hasValidUser = false;
+      // var wasConnected = false;
+      // var alertPoped = false;
       var onlineUserList = [];
+      var hasValidUser = false;
 
       var ChatService = function (socket, settings) {
 
@@ -162,6 +164,7 @@ angular
 
         // Start the authentication
         // globalSelf.autoconnect();
+
         // ZZY
         globalSelf.changeState();
       };
@@ -264,7 +267,9 @@ angular
             username: ""
           },
           timestamp: null,
-          connected: false
+          connected: false,
+          // ZZY
+          // validOnline: false
         };
         cache = this.cache;
 
@@ -292,7 +297,9 @@ angular
       };
 
       ChatService.prototype.validOnline = function () {
-        return this.settings.user() && hasValidUser;
+          console.log('should be after response ok', this.settings.user(), Chat.hasValidUser, this.settings.user() && Chat.hasValidUser)
+        return this.settings.user() && Chat.hasValidUser;
+        //return this.settings.user() && this.cache.validOnline;
       };
 
       /**
@@ -695,7 +702,7 @@ angular
                   // error
                   smalltalk.alert('警告', '用户名不存在');
                   console.log('Wrong username');
-                  globalSelf.killConnection();
+                  // globalSelf.killConnection();
                   break;
                 case ResponseType.OK:
                   // send password packet
@@ -731,7 +738,7 @@ angular
                 case ResponseType.ErrorOccurs:
                   // error
                   console.log('Wrong password packet type');
-                  globalSelf.killConnection();
+                  // globalSelf.killConnection();
                   break;
                 case ResponseType.ChangePassword:
                   // popup reset password prompt
@@ -769,7 +776,7 @@ angular
 
           case SessionState.UserSync:
             if (rawData.packetType != PacketType.Configuration) {
-              // globalSelf.killConnection();
+              // // globalSelf.killConnection();
               console.log('wrong packet', rawData);
             } else {
               // change configuration storage
@@ -893,12 +900,13 @@ angular
         switch (sessionState) {
           case SessionState.GreatWall:
             console.log('Howdy! This is temporarily the end!');
-            console.log('hasValidUser: ', hasValidUser);
+            console.log('hasValidUser: ', Chat.hasValidUser);
             console.log('validOnline: ', globalSelf.validOnline());
+            console.log('user: ', globalSelf.user());
             smalltalk.alert('警告', '目前暂时在这里告一段落，再见！');
             break;
           case SessionState.FirstThingsFirst:
-            hasValidUser = false;
+            Chat.hasValidUser = false;
             console.log('app start');
             sessionState = SessionState.Init;
             globalSelf.autoconnect();
@@ -914,7 +922,7 @@ angular
               // error
               console.log('rawData.packetType: ', rawData.packetType);
               smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ', rawData.packetType).then(
-                  globalSelf.killConnection()
+                  // globalSelf.killConnection()
               );
             } else {
               // decode payload here
@@ -927,7 +935,7 @@ angular
                   console.log('Wrong username: UserNotExist');
                   smalltalk.alert('警告', '用户名不存在，请重新登录').then(
                       function() {
-                        hasValidUser = false;
+                        Chat.hasValidUser = false;
                         sessionState = SessionState.FirstThingsFirst;
                         changeState();
                       }
@@ -939,7 +947,7 @@ angular
                   console.log('Wrong username: ErrorOccurs');
                   smalltalk.alert('警告', '出现其他用户名错误').then(
                       function() {
-                        globalSelf.killConnection();
+                        // globalSelf.killConnection();
                       }
                   );
                   break;
@@ -960,7 +968,7 @@ angular
                   console.log('unknown ResponseType');
                   smalltalk.alert('警告', '服务器端info_response包错误，rawData.ResponseType: ', infoData).then(
                       function() {
-                        globalSelf.killConnection();
+                        // globalSelf.killConnection();
                       }
                   );
                   break;
@@ -973,7 +981,7 @@ angular
               // error
               console.log('rawData.packetType: ', rawData.packetType);
               smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ', rawData.packetType).then(
-                  globalSelf.killConnection()
+                  // globalSelf.killConnection()
               );
             } else {
               // decode payload
@@ -982,7 +990,7 @@ angular
                 case ResponseType.ErrorOccurs:
                   // error
                   console.log('Wrong password packet type');
-                  globalSelf.killConnection();
+                  // globalSelf.killConnection();
                   break;
                 case ResponseType.Wrong:
                   // display message on label
@@ -991,7 +999,7 @@ angular
                   console.log('Wrong password');
                   smalltalk.alert('警告', '密码错误，请重新登录').then(
                       function() {
-                        hasValidUser = false;
+                        Chat.hasValidUser = false;
                         sessionState = SessionState.FirstThingsFirst;
                         changeState();
                       }
@@ -999,26 +1007,30 @@ angular
                   break;
                 case ResponseType.OK:
                   console.log('ResponseType.OK');
-                  hasValidUser = true;
+                  Chat.hasValidUser = true;
+
+                  // TODO: This is problematic!
+                  // this.cache.validOnline = true;
                   sessionState = SessionState.UserSync;
                   break;
                 default:
                   console.log('unknown ResponseType');
                   smalltalk.alert('警告', '服务器端passwd_response包错误，rawData.ResponseType: ', infoData).then(
                       function() {
-                        globalSelf.killConnection();
+                        // globalSelf.killConnection();
                       }
                   );
                   break;
               }
             }
             break;
+
           case SessionState.UserSync:
             if (rawData.packetType != PacketType.SyncUserName && rawData.packetType != PacketType.SyncEnd) {
               // error
               console.log('rawData.packetType: ', rawData.packetType);
               smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType').then(
-                  globalSelf.killConnection()
+                  // globalSelf.killConnection()
               );
             } else {
               switch (rawData.packetType) {
@@ -1038,7 +1050,7 @@ angular
                   console.log('sync pack unknown');
                   smalltalk.alert('警告', '未知packet类型').then(
                       function () {
-                        globalSelf.killConnection();
+                        // globalSelf.killConnection();
                       }
                   );
                   break;
