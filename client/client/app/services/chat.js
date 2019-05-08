@@ -130,13 +130,13 @@ angular
       var globalSocket;
       // var wasConnected = false;
       // var alertPoped = false;
-      var onlineUserList = [];
       var hasValidUser = false;
 
       var ChatService = function (socket, settings) {
 
         var self = this;
         globalSelf = this;
+        ChatService.prototype.onlineUserList = [];
 
         globalSelf.socket = socket;
         globalSelf.settings = settings;
@@ -173,6 +173,10 @@ angular
         globalSelf.changeState();
       };
 
+      ChatService.prototype.getOnlineUserList = function() {
+        return globalSelf.getOnlineUserList;
+      };
+
       /**
        * Check if the user is currently logged in.
        *
@@ -183,6 +187,13 @@ angular
         return !!(globalSelf.cache && globalSelf.cache.connected);
       };
 
+      // ChatService.prototype.rowLabels = [1,2,3,4,5,6,7,8,9,10];
+      // ChatService.prototype.colLabels = ['a','b','c','d','e','f','g','h','i','j','k'];
+      ChatService.prototype.demo = function (row, col, checkBox) {
+        console.log('demo', row, col, checkBox);
+      };
+
+      ChatService.prototype.checkBox = false;
 
       ChatService.prototype.decodePacket = function decodePacket(packet) {
         let packetType = packet.readUInt8(0);
@@ -1040,9 +1051,9 @@ angular
             } else {
               switch (rawData.packetType) {
                 case PacketType.SyncUserName:
-                  if (onlineUserList.indexOf(globalSelf.decodeSyncUserNamePacket(rawData)) < 0) {
-                    onlineUserList.push(globalSelf.decodeSyncUserNamePacket(rawData));
-                    console.log('online user:', onlineUserList[onlineUserList.length-1]);
+                  if (globalSelf.onlineUserList.indexOf(globalSelf.decodeSyncUserNamePacket(rawData)) < 0) {
+                    globalSelf.onlineUserList.push(globalSelf.decodeSyncUserNamePacket(rawData));
+                    console.log('online user:', globalSelf.onlineUserList[globalSelf.onlineUserList.length-1]);
                   }
                   break;
                 case PacketType.SyncEnd:

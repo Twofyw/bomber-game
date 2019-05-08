@@ -11,31 +11,40 @@
 <!--  <div class="xp-grid">-->
 <!--    <div class="xp-cellContainer">-->
 <!--  </div>-->
-
-<!--  <menu class="list-friends">-->
-<!--    <li ng-repeat="user in $Chat.room() | filter:{name: name}" ng-init="isMe = (user.id === $Chat.user().id)">-->
+<!-- ng-init="isMe = (user.id === $Chat.user().id)"-->
+  {{$Chat.onlineUserList}}
+  <menu class="list-friends">
+    <li ng-repeat="user in $Chat.onlineUserList">
 <!--      <img width="50" height="50" ng-src="{{ user.image }}">-->
-<!--      <div class="info">-->
-<!--        <div class="user" ng-bind="user.name + (isMe ? ' (me)' : '')"></div>-->
-<!--        &lt;!&ndash; <div class="status on" ng-cloak>-->
+      <div class="info">
+        <div class="user" ng-bind="user">{{user}}</div>
+        <div class="status on" ng-cloak>
 <!--          {{ $Chat.isTyping(user) ? 'typing...' : 'online' }}-->
-<!--          <a class="status inactive" href="javascript:void(0);" ng-click="$Chat.disconnect()" ng-if="isMe">(Logout)</a>-->
-<!--        </div> &ndash;&gt;-->
-<!--      </div>-->
-<!--    </li>-->
-<!--  </menu>-->
+          <a class="status inactive" href="javascript:void(0);" ng-click="$Chat.disconnect()">(Send request...)</a>
+        </div>
+      </div>
+    </li>
+  </menu>
 </div>
 <!--class="row" --><!--class="col-md" -->
-<div class="chat text-center">
-  <div class="botton-grid btn-group btn-matrix">
-    <div ng-repeat="rowLabel in $Chat.rowLabels track by $index">
-      <div ng-repeat="colLabel in $Chat.colLabels">
-        <button class="badge btn-primary">{{colLabel}}{{rowLabel}}</button>
-      </div>
-    </div>
-  </div>
 
-<!--  <div class="top">-->
+<p>{{$Chat.onlineUserList}}</p>
+<li *ngFor="let item of $Chat.getOnlineUserList(); index as i; trackBy: trackByFn">
+    {{i}} {{item}}
+</li>
+
+<div class="chat text-center">
+    <div class="botton-grid btn-group btn-matrix">
+        <div ng-repeat="rowLabel in $Chat.rowLabels">
+            <div ng-repeat="colLabel in $Chat.colLabels">
+                <button class="badge btn-primary" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.checkBox)"> </button>
+            </div>
+        </div>
+    </div>
+    <input ng-model="$Chat.checkBox" type="checkbox" class="form-check-input">
+
+
+    <!--  <div class="top">-->
 <!--    <div class="avatar" style="float: right; padding-right: 12px">-->
 <!--      <img width="50" height="50" ng-src="{{ $Chat.user().image }}">-->
 <!--    </div>-->
