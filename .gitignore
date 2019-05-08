@@ -119,4 +119,5 @@ typings/
 *.out
 *.app
 
-.vscode
+/.vscode
+/references

@@ -94,6 +94,10 @@ angular
           };
         };
 
+        ChatService.prototype.rowLabels = Array.apply(null, {length: 10}).map(Number.call, Number);
+        ChatService.prototype.colLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+
+
         // Register socket callbacks
         // globalSelf.socket.on('user.joined', wrap(self.onUserJoined));
         // globalSelf.socket.on('user.typing', wrap(self.onUserTyping));
@@ -250,6 +254,7 @@ angular
       ChatService.prototype.messages = function () {
         return this.cache.messages || [];
       };
+
 
       /**
        * Gets or sets if message is typing.

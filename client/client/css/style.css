@@ -341,3 +341,20 @@ body {
 .ui i.fa-picture-o {
     margin-left: 5%;
 }
+
+
+/* The heart of the matter */
+.botton-grid.btn-group.btn-matrix > div > div > button {
+    width: 35px;
+    padding: 9px;
+}
+
+.botton-grid.btn-group.btn-matrix {
+    text-align: center;
+    /*     margin: auto; */
+    margin: 0;
+    /*   position: absolute; */
+    top: 50%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}

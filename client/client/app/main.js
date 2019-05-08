@@ -2,9 +2,10 @@ var io = require('socket.io');
 
 angular
   .module(DEFAULT.PKG(), [
+      'ui.bootstrap',
 
     // Angular framework modules
-    'ngRoute',
+      'ngRoute',
 
     // Custom
     DEFAULT.PKG('settings'),
