@@ -1,25 +1,27 @@
+
+
 # Simple Chat Room Package Design  
 
 ## Frame type (all)
 
-| frame type | descriptor |
-| :--------: | :--------: |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
-|            |            |
+|  frame type  | descriptor |
+| :-----------------: | :--------: |
+| info | 0x00 |
+| info_response | 0x01 |
+| passwd | 0x02 |
+| passwd_response | 0x03 |
+| refuse | 0x04 |
+| UserName | 0x06 |
+| OnlineUser | 0x07 |
+| SyncEnd | 0x08 |
+|   SendInvit   |    0x09    |
+| OfflineUser | 0x10 |
+|   RecvInvit   |    0x0A    |
+| InvitResponse |    0x0B    |
+|     Board     |    0x0C    |
+|  SingleCoord  |    0x0D    |
+|  DoubleCoord  |    0x0E    |
+|   GameOver    |    0x0F    |
 
 ------------------------
 
@@ -72,7 +74,7 @@
 > | 0x1  |  0x3  |     0x4     |
 > | :--: | :---: | :---------: |
 > |  OK  | wrong | ErrorOccurs |
-> 密码错误client**不会** **不会** **不会**直接踢掉
+> 密码错误client不直接踢掉
 
 #### refuse  `0x04`
 
@@ -96,18 +98,28 @@
 
 ### Frame types
 
-| frame type | descriptor |
-| :--------: | :--------: |
-|  UserName  |    0x06    |
-|  SyncEnd   |    0x08    |
+| frame type  | descriptor |
+| :---------: | :--------: |
+|  UserName   |    0x06    |
+| OnlineUser  |    0x07    |
+|   SyncEnd   |    0x08    |
+| OfflineUser |    0x10    |
 
-#### UserName  `0x06`
+
+#### **UserName**  `0x06`
 
 |  0   |            1, 2            |         3 ... 31         |
 | :--: | :------------------------: | :----------------------: |
 | 0x06 | user_name length (2 bytes) | user_name (host to user) |
 
-#### SyncEnd   `0x08`
+
+#### **OnlineUser** `0x07`
+
+|  0   |            1,2            |        3... 31        |
+| :--: | :-----------------------: | :-------------------: |
+| 0x07 | user_name length(2 bytes) | user_name (broadcast) |
+
+#### **SyncEnd**   `0x08`
 
 1 byte
 
@@ -115,9 +127,11 @@
 | :--: | :----: | :--: |
 | 0x08 | 0x0000 |  0   |
 
+#### **OfflineUser** `0x10`
 
-
-
+|  0   |            1,2            |        3... 31        |
+| :--: | :-----------------------: | :-------------------: |
+| 0x10 | user_name length(2 bytes) | user_name (broadcast) |
 
 ------------------------
 

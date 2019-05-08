@@ -85,16 +85,20 @@ void TransferLayer::select_loop(int listener) {
                     if (FD_ISSET(el.socket_fd, &read_fds)) {
                         if (try_recv(el) == StatusCode::OK && el.recv_buffer.size() >= el.recv_buffer.current_packet_size()) {
                             // LOG(Debug) << "Info buffer " << el.recv_buffer.size() << endl;
-                            // LOG(Debug) << "Should be username " << el.recv_buffer.data + 3 << endl;
+                            // LOG(Debug) << "SHould be username " << el.recv_buffer.data + 3 << endl;
                             PreLayerInstance.unpack_DataPacket(&el);
                             if (el.state == SessionState::Error) {
                                 // remove client here
+                                PreLayerInstance.pack_ErrorOccurs(&el);
                                 remove_client(el);
+                                PreLayerInstance.broadcast_Offline(&el);
                                 break;
                             }
                         } else {
                             // remove client here
+                            PreLayerInstance.pack_ErrorOccurs(&el);
                             remove_client(el);
+                            PreLayerInstance.broadcast_Offline(&el);
                             break;
                         }
                     }
@@ -102,7 +106,9 @@ void TransferLayer::select_loop(int listener) {
                     cout << "send buffer transport " << el.send_buffer.size() << endl;
                     if (FD_ISSET(el.socket_fd, &write_fds) && try_send(el) != StatusCode::OK) {
                         // remove client
+                        PreLayerInstance.pack_ErrorOccurs(&el);
                         remove_client(el);
+                        PreLayerInstance.broadcast_Offline(&el);
                     }
                 }
 
@@ -238,16 +244,28 @@ Client * TransferLayer::find_by_username_cnt(Client *client){
     return NULL;
 }
 
-std::vector<std::string> TransferLayer::find_all_user() {
+std::vector<std::string> TransferLayer::find_all_user(Client* host_client) {
     // vector for username
     vector<string> namestack_;
 
     list<Client>::iterator it = session_set.begin();
-    for(; it != session_set.end(); it++) {
+    for(; it != session_set.end() && &(*it) != host_client; it++) {
         namestack_.push_back(it->host_username_);
     }
 
     return namestack_;
+}
+
+std::vector<Client *> TransferLayer::find_all_client(Client* host_client) {
+    // vector for username
+    std::vector<Client*> clientstack_;
+
+    list<Client>::iterator it = session_set.begin();
+    for(; it != session_set.end() && &(*it) != host_client; it++) {
+        clientstack_.push_back(&(*it));
+    }
+
+    return clientstack_;
 }
 
 // //return:

@@ -9,6 +9,32 @@ extern TransferLayer TransLayerInstance;
 
 using namespace std;
 
+void PresentationLayer::pack_ErrorOccurs(Client* client) {
+    vector<uint8_t> temp;
+
+    //descriptor
+    uint8_t descriptor = (uint8_t) PacketType::Refuse;
+    temp.clear();
+    temp.push_back(descriptor);
+
+    //length = 1
+    temp.push_back((uint8_t)0);
+    temp.push_back((uint8_t)1);
+
+    //response
+    temp.push_back((uint8_t)ResponseType::ErrorOccurs);
+
+    client->send_buffer.push(temp);    
+
+    return;
+}
+
+void PresentationLayer::broadcast_Offline(Client* client) {
+    AppLayerInstance.BroadcastOffline(client);
+
+    return;
+}
+
 bool PresentationLayer::check_passwordFormat(unsigned char *password){
     unsigned char * ptr = password;
     if(!strcmp((char *)password, "123456")) return true;
@@ -55,90 +81,6 @@ vector<uint8_t> PresentationLayer::pack_Response(Message_To_Pre message){
     return temp;
 }
 
-// vector<uint8_t> PresentationLayer::pack_Config(Message_To_Pre message){
-//     static vector<uint8_t> temp;
-//     uint8_t descriptor;
-//     uint16_t length;
-//     uint16_t conf;
-
-//     temp.clear();
-
-//     //descriptor
-//     temp.push_back(*((uint8_t*)&message.type_));
-
-//     //conf length = 8
-//     length = (uint16_t)8;    
-//     temp.push_back((uint8_t)(length >> 8) );
-//     temp.push_back((uint8_t)(length) );
-
-//     //configure
-//     conf = (uint16_t)message.config_;
-//     temp.push_back((uint8_t)(conf >> 8) );
-//     temp.push_back((uint8_t)(conf) );
-
-//     //RGB
-//     temp.push_back((uint8_t)255);
-//     temp.push_back((uint8_t)255);
-//     temp.push_back((uint8_t)255);
-
-//     temp.push_back((uint8_t)255);
-//     temp.push_back((uint8_t)227);
-//     temp.push_back((uint8_t)132);
-//     return temp;
-// }
-
-vector<uint8_t> PresentationLayer::pack_TextUserName(Client * client){
-    // vector<uint8_t> temp;
-    // uint8_t descriptor;
-    // uint16_t length;
-
-    // Message_To_App message = client->message_ptoa;
-
-    // //push back: descriptor
-    // temp.push_back((uint8_t)PacketType::TextUsername);
-
-    // //push back: user name length   (user name = client->host_username_)
-    // length = (uint16_t)client->host_username_.length();
-    // temp.push_back((uint8_t)(length >> 8) );
-    // temp.push_back((uint8_t)(length) );
-
-    // //push back: user name
-    // const char* c;
-    // c = client->host_username_.c_str();
-    // while((*c) != '\0'){
-    //     temp.push_back((uint8_t)(*c) );
-    //     c++;
-    // }
-
-    // return temp;
-}
-
-vector<uint8_t> PresentationLayer::pack_Text(Client * client){
-    // vector<uint8_t> temp;
-    // uint8_t descriptor;
-    // uint16_t length;
-
-    // Message_To_App message = client->message_ptoa;
-
-    // //push back: descriptor
-    // temp.push_back((uint8_t)PacketType::Text);
-
-    // //push back: text length
-    // length = (uint16_t)message.media_text_.length();
-    // temp.push_back((uint8_t)(length >> 8) );
-    // temp.push_back((uint8_t)(length) );
-
-    // //push back: text
-    // const char* c;
-    // c = message.media_text_.c_str();
-    // while((*c) != '\0'){
-    //     temp.push_back((uint8_t)(*c) );
-    //     c++;
-    // }
-
-    // return temp;
-}
-
 vector<uint8_t> PresentationLayer::pack_Invit(Message_To_Pre message){
     vector<uint8_t> temp;
     uint16_t length;
@@ -163,7 +105,6 @@ vector<uint8_t> PresentationLayer::pack_Invit(Message_To_Pre message){
     return temp;
 }
 
-//vector<uint8_t> PresentationLayer::pack_UserName(Message_To_Pre * message, string host_name){
 vector<uint8_t> PresentationLayer::pack_UserName(Message_To_Pre * message){
     vector<uint8_t> temp;
     uint16_t length;
@@ -173,7 +114,7 @@ vector<uint8_t> PresentationLayer::pack_UserName(Message_To_Pre * message){
     temp.push_back((uint8_t)PacketType::UserName);
 
     //push_back user name length
-    str = *message->onlineuser_.begin(); 
+    str = *(message->onlineuser_.begin()); 
     length = (uint16_t)(str.length());
     temp.push_back((uint8_t)(length >> 8) );
     temp.push_back((uint8_t)(length) );
@@ -189,6 +130,30 @@ vector<uint8_t> PresentationLayer::pack_UserName(Message_To_Pre * message){
     //erase host name
     message->onlineuser_.erase(message->onlineuser_.begin());     
     
+    return temp;
+}
+
+
+std::vector<uint8_t> PresentationLayer::pack_UserChange(Message_To_Pre message) {
+    vector<uint8_t> temp;
+
+    //descriptor
+    temp.push_back((uint8_t)message.type_);
+
+    //push_back user name length
+    string str = message.user_change_;
+    uint16_t length = (uint16_t)(str.length());
+    temp.push_back((uint8_t)(length >> 8) );
+    temp.push_back((uint8_t)(length) );
+    
+    //push back user name
+    const char* c;
+    c = str.c_str();
+    while((*c) != '\0'){
+        temp.push_back((uint8_t)(*c) );
+        c++;
+    }
+
     return temp;
 }
 
@@ -248,38 +213,6 @@ vector<uint8_t> PresentationLayer::pack_DoubleCoord(Message_To_Pre message){
 
     return temp;
 }
-// vector<uint8_t> PresentationLayer::pack_History(Message_To_Pre * message){
-//     vector<uint8_t> temp;
-//     uint8_t descriptor;
-//     uint16_t length;
-//     string str;
-
-//     //push back: descriptor
-//     if(message->type_ == PacketType::Configuration)
-//         temp.push_back((uint8_t)PacketType::History);
-
-//     if(message->type_ == PacketType::Text)
-//         temp.push_back((uint8_t)PacketType::Text);
-
-//     //push back: text length
-//     str = *message->history_.begin();
-//     length = (uint16_t)(str.length());
-//     temp.push_back((uint8_t)(length >> 8) );
-//     temp.push_back((uint8_t)(length) );
-
-//     //push back: text
-//     const char* c;
-//     c = str.c_str();
-//     while((*c) != '\0'){
-//         temp.push_back((uint8_t)(*c) );
-//         c++;
-//     }
-
-//     //erase text
-//     message->history_.erase(message->history_.begin());     
-
-//     return temp;
-// }
 
 StatusCode PresentationLayer::pack_Message(Client *client){
     Client *recv_client;
@@ -293,16 +226,32 @@ StatusCode PresentationLayer::pack_Message(Client *client){
     // special handling for multi-login
     if(message.type_ == PacketType::Refuse){
         //TODO: refuse and disconnect
+        client->send_buffer.push(pack_Response(message));
+    }
+    
+    // Broadcast the new log in information
+    if(message.type_ == PacketType::OnlineUser || message.type_ == PacketType::OfflineUser){
+        client->send_buffer.push(pack_UserChange(message));
     }
 
     //cases based on status
 
+    if((client->state == SessionState::Acceptance)) {
+        if(message.type_ == PacketType::InfoResponse) {
+            temp_str = pack_Response(message);
+            client->send_buffer.push(temp_str);
+        }
+    }
+
     //WaitForPasswd, Error:
-    // if((client->state == SessionState::WaitForPasswd) 
-    //         || (client->state == SessionState::Error)) {
-    if(client->state == SessionState::WaitForPasswd) {
-        temp_str = pack_Response(message);
-        client->send_buffer.push(temp_str);
+    if((client->state == SessionState::WaitForPasswd) ) {
+        switch (message.type_)
+        {
+        case PacketType::PasswordResponse:
+            temp_str = pack_Response(message);
+            client->send_buffer.push(temp_str);
+            break;
+        }
     }
 
     //ServerWaiting: 
@@ -312,7 +261,6 @@ StatusCode PresentationLayer::pack_Message(Client *client){
             //sync online user list 
             while(message.onlineuser_.size() != 0){
                 //online user names
-                // temp_str = pack_UserName(&message, client->host_username_);
                 temp_str = pack_UserName(&message);
                 client->send_buffer.push(temp_str);
                 //history
@@ -359,67 +307,8 @@ StatusCode PresentationLayer::pack_Message(Client *client){
             client->send_buffer.push(temp_str);
         }
     }
-    //     //send Text to some other client
-    //     if(message.type_ == PacketType::Text){
-    //         //use message_ptoa to find the receiver client
-    //         Message_To_App message_ptoa = client->message_ptoa;
-    //         string client_name;
-            
-    //         vector<string>::iterator iter;
-    //         //group chat
-    //         if(message_ptoa.user_name_list_.size() != 0){
-    //             while(message_ptoa.user_name_list_.size()){
-    //                 //find recv user
-    //                 iter = message_ptoa.user_name_list_.begin();
-    //                 client_name = *iter;
-    //                 recv_client = TransLayerInstance.find_by_username(client_name);
-                    
-    //                 //pack text user name
-    //                 temp_str = pack_TextUserName(client);
-    //                 recv_client->send_buffer.push(temp_str);
 
-    //                 //pack text
-    //                 temp_str = pack_Text(client);
-    //                 recv_client->send_buffer.push(temp_str);
-
-    //                 //erase recv user
-    //                 message_ptoa.user_name_list_.erase(iter);
-    //             }
-    //         }
-    //         //private chat
-    //         else{
-    //             //use message_ptoa.user_name_ to find the recv_client          
-    //             client_name = message_ptoa.user_name_;
-    //             recv_client = TransLayerInstance.find_by_username(client_name);
-                
-    //             //recv client off line
-    //             if(recv_client == NULL)
-    //                 return StatusCode::OK;
-
-    //             //pack text user name
-    //             temp_str = pack_TextUserName(client);
-    //             recv_client->send_buffer.push(temp_str);
-
-    //             //pack text
-    //             temp_str = pack_Text(client);
-    //             recv_client->send_buffer.push(temp_str);
-    //         }
-
-    //         return StatusCode::OK;
-    //     }//end of Text
-    // }
-
-    // //WaitForText:
-    // if((client->state == SessionState::WaitForText) )
-    //     return StatusCode::OK;
-
-
-    // //file
-    // // if((message.type_ == FileName) || (message.type_ == FileInProgress)
-    // //     || (message.type_ == FileEnd) || (message.type_ == FileUsername) ){
-    // //     temp_str = pack_String(message);
-    // // }
-    // return StatusCode::OK; 
+    return StatusCode::OK; 
 }
 
 StatusCode PresentationLayer::unpack_DataPacket(Client *client){
@@ -476,16 +365,6 @@ StatusCode PresentationLayer::unpack_DataPacket(Client *client){
         if(packet.type == PacketType::GameOver) {
             ;
         }
-
-        // if(packet.type == PacketType::Configuration){
-        //         message = unpack_Configuration(packet);
-        //         client->message_ptoa.config_ = message.config_;
-        // }
-
-        // if(packet.type == PacketType::GroupTextUserlist){
-        //         message = unpack_GroupTextUserList(packet);
-        //         client->message_ptoa.user_name_list_ = message.user_name_list_;
-        // }
 
         client->message_ptoa.type_ = packet.type;
         // cout << (packet.type == PacketType::Password) << endl;
@@ -626,49 +505,5 @@ void PresentationLayer::unpack_DoubleCoord(DataPacket packet, Message_To_App * m
 
     return;
 }
-
-// Message_To_App PresentationLayer::unpack_Configuration(DataPacket packet){
-//     Message_To_App message;
-//     vector<uint8_t>::iterator iter;
-//     unsigned short st;   
-
-//     iter = packet.data.begin();
-//     st = (unsigned short)(*iter);
-//     st = st << 8;
-//     st += (unsigned short)(*(++iter));
-//     message.config_ = ntohs(st);
-
-//     return message;
-// }
-
-// Message_To_App PresentationLayer::unpack_GroupTextUserList(DataPacket packet){
-//     Message_To_App message;
-//     vector<uint8_t>::iterator iter;
-//     string temp_str;
-//     unsigned char temp_ch[30]; //max user name length = 28
-
-//     int len = 0;
-//     iter = packet.data.begin();
-
-//     //write user_name_list_
-//     for( ; iter != packet.data.end(); iter++){
-//         temp_ch[len++] = *iter; 
-//         //if encountered '\0'
-//         if((*iter) == '\0'){
-//             temp_str = (char *)temp_ch;
-//             //push_back a new user_name
-//             message.user_name_list_.push_back(temp_str);
-//             len = 0;    //reset len = 0, and fetch the next user_name
-//         }
-//     }
-
-//     //add \0 to the last user_name in the user_name_list
-//     temp_ch[len] = '\0';
-//     temp_str = (char *)temp_ch;
-//     //push_back a new user_name
-//     message.user_name_list_.push_back(temp_str);
-
-//     return message;
-// }
 
 #endif
