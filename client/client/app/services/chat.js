@@ -7,7 +7,7 @@ var PacketType = Object.freeze({
   "PasswordResponse": 0x03,
   "Refuse": 0x04,
   "Configuration": 0x05,
-  "HistoryUserName": 0x06,
+  "SyncUserName": 0x06,
   "History": 0x07,
   "SyncEnd": 0x08,
   "TextUsername": 0x09,
@@ -28,7 +28,7 @@ var PacketType = Object.freeze({
   "PasswordResponse": 0x03,
   "Refuse": 0x04,
   "Configuration": 0x05,
-  "HistoryUserName": 0x06,
+  "SyncUserName": 0x06,
   "History": 0x07,
   "SyncEnd": 0x08,
   "TextUsername": 0x09,
@@ -62,7 +62,7 @@ var SessionState = Object.freeze({
   "UserExists": 3, // Branch #1, receive password and match password in database
   "PasswordReset": 4, // First login. Receive new password and update database
   "AlreadyLoggedIn": 5, // Kick off the logged in session
-  "PreferenceSync": 6, // Merge #1, send preference
+  "UserSync": 6, // Merge #1, send preference
   "HistorySync": 7, // Send history
   "ClientWaiting": 8,
   // Branch #2 and Merge #2, branch according to the media_type
@@ -92,7 +92,7 @@ var SessionState = Object.freeze({
   "UserExists": 3, // Branch #1, receive password and match password in database
   "PasswordReset": 4, // First login. Receive new password and update database
   "AlreadyLoggedIn": 5, // Kick off the logged in session
-  "PreferenceSync": 6, // Merge #1, send preference
+  "UserSync": 6, // Merge #1, send preference
   "HistorySync": 7, // Send history
   "ClientWaiting": 8,
   // Branch #2 and Merge #2, branch according to the media_type
@@ -746,7 +746,7 @@ angular
                     });
                     console.log('password reset!');
                   });
-                  sessionState = SessionState.PreferenceSync;
+                  sessionState = SessionState.UserSync;
                   break;
                 case ResponseType.Wrong:
                   // display message on label
@@ -757,7 +757,7 @@ angular
                   break;
                 case ResponseType.OK:
                   console.log('ResponseType.OK');
-                  sessionState = SessionState.PreferenceSync;
+                  sessionState = SessionState.UserSync;
                   break;
                 default:
                   console.log('unknown ResponseType');
@@ -766,7 +766,7 @@ angular
             }
             break;
 
-          case SessionState.PreferenceSync:
+          case SessionState.UserSync:
             if (rawData.packetType != PacketType.Configuration) {
               // globalSelf.killConnection();
               console.log('wrong packet', rawData);
@@ -780,11 +780,11 @@ angular
 
           case SessionState.HistorySync:
             switch (rawData.packetType) {
-              case PacketType.HistoryUserName:
+              case PacketType.SyncUserName:
                 // read the byte at index 3
                 // 0: Host2User, 1: User2Host
                 // store username
-                let data = globalSelf.decodeHistoryUsernamePacket(rawData);
+                let data = globalSelf.decodeSyncUserNamePacket(rawData);
                 if (data.direction == 0) {
                   globalSelf.cache.lastUsername = globalUsername;
                 } else {
@@ -992,7 +992,7 @@ angular
                     });
                     console.log('password reset!');
                   });
-                  sessionState = SessionState.PreferenceSync;
+                  sessionState = SessionState.UserSync;
                   break;
                    */
                 case ResponseType.Wrong:
@@ -1011,8 +1011,7 @@ angular
                 case ResponseType.OK:
                   console.log('ResponseType.OK');
                   hasValidUser = true;
-                  //sessionState = SessionState.PreferenceSync;
-                  sessionState = SessionState.GreatWall;
+                  sessionState = SessionState.UserSync;
                   break;
                 default:
                   console.log('unknown ResponseType');
@@ -1026,7 +1025,7 @@ angular
             }
             break;
 
-          case SessionState.PreferenceSync:
+          case SessionState.UserSync:
             if (rawData.packetType != PacketType.Configuration) {
               // error
               console.log('rawData.packetType: ', rawData.packetType);
@@ -1034,22 +1033,50 @@ angular
                   globalSelf.killConnection()
               );
             } else {
-              // change configuration storage
-              // globalSelf.user().prefeferences = globalSelf.decodeConfigurationPacket(rawData);
               console.log('configuration');
-              // sessionState = SessionState.HistorySync;
+
+              switch (rawData.packetType) {
+                case PacketType.SyncUserName:
+                  globalSelf.cache.lastUsername = globalSelf.decodeSyncUserNamePacket(rawData);
+                  break;
+
+                case PacketType.History:
+                  let historyText = globalSelf.decodeTextPacket(rawData);
+                  // update view to show chat history
+
+                  $rootScope.$apply(function () {
+                    globalSelf.cache.messages.push({
+                      username: globalSelf.cache.lastUsername,
+                      body: historyText,
+                    });
+                  });
+
+                  setTimeout(function () {
+                    jQuery(".messages").getNiceScroll(0).resize();
+                    return jQuery(".messages").getNiceScroll(0).doScrollTop(999999, 999);
+                  }, 100);
+                  break;
+                case PacketType.SyncEnd:
+                  sessionState = SessionState.ClientWaiting;
+                  break;
+
+                default:
+                  break;
+              }
+              
+              
               globalSelf.cache.lastUsername = globalSelf.decodeUsernamePacket(rawData);
               sessionState = SessionState.GreatWall;
             }
             break;
-
+/*
           case SessionState.HistorySync:
             switch (rawData.packetType) {
-              case PacketType.HistoryUserName:
+              case PacketType.SyncUserName:
                 // read the byte at index 3
                 // 0: Host2User, 1: User2Host
                 // store username
-                let data = globalSelf.decodeHistoryUsernamePacket(rawData);
+                let data = globalSelf.decodeSyncUserNamePacket(rawData);
                 if (data.direction == 0) {
                   globalSelf.cache.lastUsername = globalUsername;
                 } else {
@@ -1074,7 +1101,6 @@ angular
                   return jQuery(".messages").getNiceScroll(0).doScrollTop(999999, 999);
                 }, 100);
                 break;
-
               case PacketType.SyncEnd:
                 sessionState = SessionState.ClientWaiting;
                 break;
@@ -1083,7 +1109,7 @@ angular
                 break;
             }
             break;
-
+*/
           case SessionState.ClientWaiting:
             if (isSend) {
               switch (rawData.packetType) {
@@ -1168,7 +1194,7 @@ angular
         // globalSelf.socketClose();
       };
 
-      // ZZY
+/*
       ChatService.prototype.decodeConfigurationPacket = function (rawData) {
         let conf = {
           historyLength: rawData.payload.readUInt16BE(0),
@@ -1185,17 +1211,18 @@ angular
         };
         return conf;
       };
-
-      ChatService.prototype.decodeHistoryUsernamePacket = function (rawData) {
-        console.log('decodeHistoryUsernamePacket', rawData);
+*/
+/*
+      ChatService.prototype.decodeSyncUserNamePacket = function (rawData) {
+        console.log('decodeSyncUserNamePacket', rawData);
         let ret = {
           direction: rawData.payload.readUInt8(0),
           username: rawData.payload.slice(1, rawData.payload.length).toString(),
         };
         return ret;
       };
-
-      ChatService.prototype.decodeUsernamePacket = function (rawData) {
+*/
+      ChatService.prototype.decodeSyncUserNamePacket = function (rawData) {
         console.log('decodeUsernamePacket', rawData);
         let username = rawData.payload.toString();
         return username;

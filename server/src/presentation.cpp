@@ -156,7 +156,6 @@ vector<uint8_t> PresentationLayer::pack_Invit(Message_To_Pre message){
     const char* c;
     c = message.user_name_a_.c_str();
     while((*c) != '\0'){
-        cout << "OK" << endl;
         temp.push_back((uint8_t)(*c) );
         c++;
     }
@@ -175,7 +174,7 @@ vector<uint8_t> PresentationLayer::pack_UserName(Message_To_Pre * message){
 
     //push_back user name length
     str = *message->onlineuser_.begin(); 
-    length = (uint16_t)(str.length() + 1);
+    length = (uint16_t)(str.length());
     temp.push_back((uint8_t)(length >> 8) );
     temp.push_back((uint8_t)(length) );
 
