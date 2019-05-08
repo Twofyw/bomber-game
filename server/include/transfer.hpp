@@ -35,7 +35,8 @@ public:
 
     Client* find_by_username_cnt(Client *client);
 
-    std::vector<std::string> find_all_user();
+    std::vector<std::string> find_all_user(Client* host_client);
+    std::vector<Client*> find_all_client(Client* host_client);
 
     // If false, return -1, else return socket code.
     int get_listener(const short port);

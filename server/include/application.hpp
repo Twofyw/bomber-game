@@ -19,6 +19,7 @@ class ApplicationLayer{
                 void CopyBoard(Client *client_A, Client *client_B);
                 ApplicationLayer();
                 void MessageToApp(Client *client);
+                void BroadcastOffline(Client* client);
 };
 
 

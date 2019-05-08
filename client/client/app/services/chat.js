@@ -27,11 +27,12 @@ var PacketType = Object.freeze({
   "Password": 0x02,
   "PasswordResponse": 0x03,
   "Refuse": 0x04,
-  "Configuration": 0x05,
+  // "Configuration": 0x05,
   "SyncUserName": 0x06,
-  "History": 0x07,
+  "OnlineUser": 0x07,
   "SyncEnd": 0x08,
   "TextUsername": 0x09,
+  "OfflineUser": 0x10,
   "Text": 0x0A,
   "FileName": 0x0B,
   "FileInProgress": 0x0C,
@@ -893,9 +894,28 @@ angular
               return;
             }
           }
+          else if (rawData.packetType == PacketType.OnlineUser) {
+          console.log('get new OnlineUser packet');
+          if (onlineUserList.indexOf(globalSelf.decodeSyncUserNamePacket(rawData)) < 0) {
+            onlineUserList.push(globalSelf.decodeSyncUserNamePacket(rawData));
+            console.log('new online user:', onlineUserList[onlineUserList.length - 1]);
+          } else {
+            console.log('user already exist in the list');
+          }
+          return;
+        } else if (rawData.packetType == PacketType.OfflineUser) {
+          console.log('get new OfflineUser packet');
+          if (onlineUserList.indexOf(globalSelf.decodeSyncUserNamePacket(rawData)) >= 0) {
+            let offline = onlineUserList.splice(onlineUserList.indexOf(globalSelf.decodeSyncUserNamePacket(rawData)), 1);
+            console.log('offline user:', offline[0]);
+          } else {
+            console.log('user not exist in the list');
+          }
+          return;
         } else {
           console.log('Empty rawData');
         }
+      }
 
         switch (sessionState) {
           case SessionState.GreatWall:

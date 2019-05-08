@@ -18,8 +18,8 @@ private:
     std::vector<uint8_t> pack_Text(Client * client);  
 
     std::vector<uint8_t> pack_Invit(Message_To_Pre message);
-    //std::vector<uint8_t> pack_UserName(Message_To_Pre * message, std::string host_name);
     std::vector<uint8_t> pack_UserName(Message_To_Pre * message);
+    std::vector<uint8_t> pack_UserChange(Message_To_Pre message);
     std::vector<uint8_t> pack_Board(struct GameInfo);
     std::vector<uint8_t> pack_SingleCoord(Message_To_Pre message);
     std::vector<uint8_t> pack_DoubleCoord(Message_To_Pre message);
@@ -66,6 +66,8 @@ public:
     // return: 
     //         OK:  unpack a DataPacket from recv_buffer and write Message_To_App succeed
     //         NoCompletePacket:   no complete packet in recv_buffer
+    void pack_ErrorOccurs(Client* client);
+    void broadcast_Offline(Client* client);
 };
 
 #endif

@@ -52,7 +52,7 @@ enum class PacketType : uint8_t {
     Refuse = 0x04,
     OnlineList = 0x05,
     UserName = 0x06,
-    // History = 0x07,`
+    OnlineUser = 0x07,
     SyncEnd = 0x08,
     SendInvit = 0x09,
     RecvInvit = 0x0A,
@@ -61,6 +61,7 @@ enum class PacketType : uint8_t {
     SingleCoord = 0x0D,
     DoubleCoord = 0x0E,
     GameOver = 0x0F,
+    OfflineUser = 0x10,
 };
 
 struct DataPacketHeader {
@@ -169,6 +170,7 @@ struct Message_To_Pre{
     // int config_;
     std::vector<std::string> onlineuser_;
     std::string user_name_a_;
+    std::string user_change_;
     int x,y;
     int head_x, head_y;
     int tail_x, tail_y;
