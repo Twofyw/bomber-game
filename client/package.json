@@ -19,19 +19,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/luiseduardobrito/mc714-1s2016-lista3.git"
+    "url": "git+https://github.com/Twofyw/bomber-game.git"
   },
   "build": {
     "app-bundle-id": "me.luiseduardobrito.simplechat",
-    "app-category-type": "public.app-category.social-networking",
+    "app-category-type": "public.app-category.games",
     "iconUrl": "./client/icon.ico"
   },
-  "author": "Luis <luiseduardo14@gmail.com>",
+  "author": "Twofyw <ywywywx@gmail.com>, Novate <tonovate@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/luiseduardobrito/mc714-1s2016-lista3/issues"
+    "url": "https://github.com/twofyw/bomber-game/issues"
   },
-  "homepage": "https://github.com/luiseduardobrito/mc714-1s2016-lista3#readme",
+  "homepage": "https://github.com/twofyw/bomber-game",
   "dependencies": {
     "bower": "^1.8.8",
     "electron-packager": "^6.0.0",

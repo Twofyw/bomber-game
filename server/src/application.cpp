@@ -40,18 +40,18 @@ void ApplicationLayer::MessageToApp(Client *client_name_)
         switch(client_name_->state)
         {
                 case SessionState::Acceptance: {
-                        if(message_->type_ != PacketType::Info){
-                                // error occurs
-                                // client_name_.message_atop.respond_ = ResponseType::ErrorOccurs;
-                                respond_->respond_ = ResponseType::ErrorOccurs;
-                                PreLayerInstance.pack_Message(client_name_);
-                                LOG(Error) << "Error receive info packet: " << unsigned(uint8_t(message_->type_)) << endl 
-                                    << "Username: " << message_->user_name_ << std::endl;
-                                return;
-                                // stop the connection 
-                                // client_name_->state = SessionState::Error;
-                                // respond_.type_ = PacketType::InfoResponse;
-                        }        
+                        // if(message_->type_ != PacketType::Info){
+                        //         // error occurs
+                        //         // client_name_.message_atop.respond_ = ResponseType::ErrorOccurs;
+                        //         respond_->respond_ = ResponseType::ErrorOccurs;
+                        //         PreLayerInstance.pack_Message(client_name_);
+                        //         LOG(Error) << "Error receive info packet: " << unsigned(uint8_t(message_->type_)) << endl 
+                        //             << "Username: " << message_->user_name_ << std::endl;
+                        //         return;
+                        //         // stop the connection 
+                        //         // client_name_->state = SessionState::Error;
+                        //         // respond_.type_ = PacketType::InfoResponse;
+                        // }        
                         // do recv info packet
                         switch(CheckUser(message_->user_name_)){
                                case true: {
@@ -68,25 +68,27 @@ void ApplicationLayer::MessageToApp(Client *client_name_)
                                        // account not exists
                                         respond_->type_ = PacketType::InfoResponse;
                                         respond_->respond_ = ResponseType::UserNotExist;
-                                        client_name_->state = SessionState::Error;
-                                        LOG(Error) << "User not Exists" << std::endl;
+                                        // client_name_->state = SessionState::Error;
+                                        client_name_->state = SessionState::WaitForPasswd;
+                                        LOG(Error) << "User not Exists: " << message_->user_name_ << std::endl;
                                         PreLayerInstance.pack_Message(client_name_);
+                                        client_name_->state = SessionState::Acceptance;
                                         break;
                                }
                         }
                         break;
                 }
                 case SessionState::WaitForPasswd: {
-                        if(message_->type_ != PacketType::Password) {
-                                // error occurs
-                                LOG(Error) << "Error receive password packet" << std::endl;
-                                // stop the connection
-                                client_name_->state = SessionState::Error;
-                                respond_->type_ = PacketType::PasswordResponse;
-                                respond_->respond_ = ResponseType::ErrorOccurs;
-                                PreLayerInstance.pack_Message(client_name_);
-                                return;
-                        }
+                //         if(message_->type_ != PacketType::Password) {
+                //                 // error occurs
+                //                 LOG(Error) << "Error receive password packet" << std::endl;
+                //                 // stop the connection
+                //                 client_name_->state = SessionState::Error;
+                //                 respond_->type_ = PacketType::PasswordResponse;
+                //                 respond_->respond_ = ResponseType::ErrorOccurs;
+                //                 PreLayerInstance.pack_Message(client_name_);
+                //                 return;
+                //         }
                         // do recv password packet
                         switch(CheckPasswd(client_name_->host_username_, message_->password_)) {
                                 case true: {
@@ -100,114 +102,151 @@ void ApplicationLayer::MessageToApp(Client *client_name_)
                                                 respond_->respond_ = ResponseType::AlreadyLoggedIn;
                                                 PreLayerInstance.pack_Message(client_name_);
                                         }
-                                        if(message_->password_ == InitPassword) {
-                                                // need to reset password
-                                                LOG(Info) << "Need to reset password" << endl;
-						// respond_->type_ = PacketType::PasswordResponse;
-						// respond_->respond_ = ResponseType::OK;
-						// PreLayerInstance.pack_Message(client_name_);
-                                                client_name_->state = SessionState::WaitForNewPasswd;
-                                                respond_->type_ = PacketType::PasswordResponse;
-                                                respond_->respond_ = ResponseType::ChangePassword;
-                                                PreLayerInstance.pack_Message(client_name_);
-                                                break;
-                                        }
-                                        else {
-                                                // do not need to reset
-                                                respond_->type_ = PacketType::PasswordResponse;
-                                                respond_->respond_ = ResponseType::OK;
-                                                PreLayerInstance.pack_Message(client_name_);
-                                                client_name_->state = SessionState::ServerWaiting;
-                                                respond_->type_ = PacketType::Configuration;
-                                                respond_->history_ = DatabaseConnection::get_instance()->retrive_message(client_name_->host_username_);
-                                                respond_->config_ = DatabaseConnection::get_instance()->retrive_history_count(client_name_->host_username_);
-                                                PreLayerInstance.pack_Message(client_name_);
-                                                break;
-                                        }
+                                        respond_->type_ = PacketType::PasswordResponse;
+                                        respond_->respond_ = ResponseType::OK;
+                                        PreLayerInstance.pack_Message(client_name_);
+                                        client_name_->state = SessionState::ServerWaiting;
+                                        respond_->type_ = PacketType::OnlineList;
+                                        // TODO FIND ALL THE ONLINE USERS
+                                        respond_->onlineuser_ = TransLayerInstance.find_all_user();
+                                        // respond_->config_ = DatabaseConnection::get_instance()->retrive_history_count(client_name_->host_username_);
+                                        PreLayerInstance.pack_Message(client_name_);
+                                        break;
                                 }
                                 case false: {
                                         // password error
                                         LOG(Info) << "Recv Wrong Password" << endl;
-                                        client_name_->state = SessionState::Error;
+                                        client_name_->state = SessionState::WaitForPasswd;
                                         respond_->type_ = PacketType::PasswordResponse;
                                         respond_->respond_ = ResponseType::WrongPassword;
                                         PreLayerInstance.pack_Message(client_name_);
+                                        client_name_->state = SessionState::Acceptance;
                                         break;
                                 }
-                                break;
-                        }
-                        break;
-                }
-                case SessionState::WaitForNewPasswd :{
-                        if(message_->type_ != PacketType::Password) {
-                                // error occurs
-                                LOG(Error) << "Error receive password packet" << std::endl;
-                                // stop the connection
-                                client_name_->state = SessionState::Error;
-                                respond_->type_ = PacketType::PasswordResponse;
-                                respond_->respond_ = ResponseType::ErrorOccurs;
-                                PreLayerInstance.pack_Message(client_name_);
-                        }
-                        else {
-                                LOG(Info) << "reset password succeed" << endl;
-                                ResetPasswd(client_name_->host_username_, message_->password_);
-                                respond_->type_ = PacketType::PasswordResponse;
-                                respond_->respond_ = ResponseType::OK;
-                                PreLayerInstance.pack_Message(client_name_);
-                                client_name_->state = SessionState::ServerWaiting;
-                                respond_->type_ = PacketType::Configuration;
-                                respond_->history_ = DatabaseConnection::get_instance()->retrive_message(client_name_->host_username_);
-                                respond_->config_ = DatabaseConnection::get_instance()->retrive_history_count(client_name_->host_username_);
-                                PreLayerInstance.pack_Message(client_name_);
                                 break;
                         }
                         break;
                 }
                 case SessionState::ServerWaiting: {
                         switch(message_->type_) {
-                                case PacketType::TextUsername: {
-                                        LOG(Info) << "Wait for text" << endl;
-                                        client_name_->state = SessionState::WaitForText;
+                                case PacketType::SendInvit: {
+                                        LOG(Info) << "Client A send invitation to Cline B" << endl;
                                         // LOG(Debug) << message_->user_name_ << endl;
-                                        // client = message_->user_name_;
+                                        Client* Client_B;
+                                        if((Client_B = TransLayerInstance.find_by_username(message_->user_name_b_)) !=NULL) {
+                                                if(Client_B->state != SessionState::ServerWaiting) {
+                                                        respond_->type_ = PacketType::InvitResponse;
+                                                        respond_->respond_ = ResponseType::Busy;
+                                                        PreLayerInstance.pack_Message(client_name_);
+                                                }
+                                                else {
+                                                        Client_B->message_atop.user_name_a_ = client_name_->host_username_;
+                                                        Client_B->message_atop.type_ = PacketType::RecvInvit;
+                                                        PreLayerInstance.pack_Message(Client_B);
+                                                }
+                                        }
+                                        else {
+                                                respond_->type_ = PacketType::InvitResponse;
+                                                respond_->respond_ = ResponseType::UserNotExist;
+                                                PreLayerInstance.pack_Message(client_name_);
+                                        }
                                         break;
                                 }
-                                case PacketType::FileUsername: {
-                                        // still in progress
-                                        LOG(Info) << "Wait for File" << endl;
-                                }
-                                case PacketType::GroupTextUserlist: {
-                                        LOG(Info) << "Wait for text" << endl;
-                                        client_name_->state = SessionState::WaitForText;
+                                case PacketType::InvitResponse: {
+                                        LOG(Info) << "Client A recv invitation response from CLinet B" << endl;
+                                        LOG(Info) << "Server B need to forward the message to CLient A" << endl;
+                                        if(message_->respond_ == ResponseType::OK) {
+                                                // Clinet A need to know that its invitation works
+                                                Client* Client_A;
+                                                if((Client_A = TransLayerInstance.find_by_username(respond_->user_name_a_)) != NULL) {
+                                                       Client_A->message_atop.type_ = PacketType::InvitResponse;
+                                                       Client_A->message_atop.respond_ = ResponseType::OK;
+                                                       PreLayerInstance.pack_Message(Client_A); 
+                                                       Client_A->state = SessionState::WaitForBoard;
+                                                       client_name_->state = SessionState::WaitForBoard;
+                                                       Client_A->game_info_.opponent_ = client_name_;
+                                                       client_name_->game_info_.opponent_ = Client_A;
+                                                }
+                                                else {
+                                                        LOG(Error) << "Can't Find Client A after B responsed." << endl;
+                                                }
+                                        }
+                                        else if(message_->respond_ == ResponseType::RefuseInvit) {
+                                                Client* Client_A;
+                                                if((Client_A = TransLayerInstance.find_by_username(respond_->user_name_a_)) != NULL) {
+                                                       Client_A->message_atop.type_ = PacketType::InvitResponse;
+                                                       Client_A->message_atop.respond_ = ResponseType::RefuseInvit;
+                                                       PreLayerInstance.pack_Message(Client_A); 
+                                                }
+                                                else {
+                                                        LOG(Error) << "Can't Find Client A after B responsed." << endl;
+                                                }
+                                        }
                                         break;
                                 }
                         }
                         break;
                 }
-                case SessionState::WaitForText: {
-                        if(message_->type_ != PacketType::Text) {
-                                // error occurs
-                                LOG(Error) << "Error receive password packet" << std::endl;
-                                // stop the connection
-                                client_name_->state = SessionState::Error;
-                                respond_->type_ = PacketType::PasswordResponse;
-                                respond_->respond_ = ResponseType::ErrorOccurs;
-                                PreLayerInstance.pack_Message(client_name_);
+                case SessionState::WaitForBoard: {
+                        switch(message_->type_) {
+                               case PacketType::Board: {
+                                        LOG(Info) << "Server 1 receive board from client" << endl;
+                                        LOG(Info) << "Need to Store it in the Server 2" << endl;
+                                        LOG(Info) << "Send Board information to Client 2" << endl;
+                                        client_name_->state = SessionState::InGame;
+                                        CopyBoard(client_name_, client_name_->game_info_.opponent_);
+                                        client_name_->game_info_.opponent_->message_atop.type_ = PacketType::Board;
+                                        PreLayerInstance.pack_Message(client_name_->game_info_.opponent_);
+                                        break;
+                               }
+                               break;
                         }
-                        else {
-                                LOG(Info) << "recv text information" << endl;
-                                client_name_->state = SessionState::ServerWaiting;
-                                respond_->type_ = PacketType::Text;
-                                // cout << message_->user_name_ << endl;
-                                // cout << "debug" << endl;
-                                // LOG(Debug) << message_->user_name_ << endl;
-                                DatabaseConnection::get_instance()->push_message(client_name_->host_username_, message_->user_name_, message_->media_text_);
-                                PreLayerInstance.pack_Message(client_name_);
-                                break;
+                        break;
+                }
+                case SessionState::InGame: {
+                        switch(message_->type_) {
+                                case PacketType::SingleCoord: {
+                                        LOG(Info) << "Server receive a single coordinate!" << endl;
+                                        LOG(Info) << "Server need to give the information to another side of the game." << endl;
+                                        LOG(Info) << "Client " << client_name_->host_username_ << "take a step: " << message_->x << ", " << message_->y << endl;
+                                        client_name_->game_info_.opponent_->message_atop.x = message_->x;
+                                        client_name_->game_info_.opponent_->message_atop.y = message_->y;
+                                        client_name_->game_info_.opponent_->message_atop.type_ = PacketType::SingleCoord;
+                                        PreLayerInstance.pack_Message(client_name_->game_info_.opponent_);
+                                        break;
+                                }
+                                case PacketType::DoubleCoord: {
+                                        LOG(Info) << "Server receive a double coordinate!" << endl;
+                                        LOG(Info) << "Server need to give the information to another side of the game." << endl;
+                                        LOG(Info) << "Client " << client_name_->host_username_ << "make a guess: " << message_->head_x << ", " << message_->head_y
+                                                  << "  " << message_->tail_x << ", " << message_->tail_y << endl;
+                                        client_name_->game_info_.opponent_->message_atop.head_x = message_->head_x;
+                                        client_name_->game_info_.opponent_->message_atop.head_y = message_->head_y;
+                                        client_name_->game_info_.opponent_->message_atop.tail_x = message_->tail_x;
+                                        client_name_->game_info_.opponent_->message_atop.tail_y = message_->tail_y;
+                                        client_name_->game_info_.opponent_->message_atop.type_ = PacketType::DoubleCoord;
+                                        PreLayerInstance.pack_Message(client_name_->game_info_.opponent_);
+                                        break;
+                                }
+                                case PacketType::GameOver: {
+                                        LOG(Info) << "Game Over!" << endl;
+                                        LOG(Info) << client_name_->host_username_ << "wins!" << endl;
+                                        client_name_->state = SessionState::ServerWaiting;
+                                        client_name_->game_info_.opponent_->state = SessionState::ServerWaiting;
+                                        break;
+                                }
                         }
                         break;
                 }
         }
 
         return ;
+}
+
+void ApplicationLayer::CopyBoard(Client* client_A, Client* client_B)
+{
+        std::memcpy(client_B->game_info_.win_board_, client_A->message_ptoa.board_, 100);
+        std::memcpy(client_B->game_info_.plane_coord_, client_A->message_ptoa.plane_coord_, 12);
+
+        return;
 }

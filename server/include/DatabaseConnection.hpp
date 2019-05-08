@@ -8,7 +8,6 @@
 #include  <mysql/mysql.h>
 #include  <vector>
 #include  <string>
-#include  <sstream>
 using namespace std;
 
 // #define DatabaseName "Simple_chat_room"
@@ -27,9 +26,6 @@ class DatabaseConnection {
 	   	bool check_account(string account_name);	 		 // check if an account is registered
 		bool check_password(string account_name, string password);
 		bool reset_password(string account_name, string password);
-		vector<string>  retrive_message(string account_main); 
-		int  retrive_history_count(string account_name);
-		void push_message(string account_main, string account_sub, string message); // push into history table
 		static DatabaseConnection *obj;
 		static DatabaseConnection *get_instance(); 		  	 // return a class instance	
 		MYSQL_RES *MysqlExecCommand(string command);

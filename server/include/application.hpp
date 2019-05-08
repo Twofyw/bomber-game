@@ -16,6 +16,7 @@ class ApplicationLayer{
                 bool CheckPasswd(std::string user_name_, std::string password_);
                 bool ResetPasswd(std::string user_name_, std::string password_);
         public:
+                void CopyBoard(Client *client_A, Client *client_B);
                 ApplicationLayer();
                 void MessageToApp(Client *client);
 };

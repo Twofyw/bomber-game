@@ -85,7 +85,7 @@ void TransferLayer::select_loop(int listener) {
                     if (FD_ISSET(el.socket_fd, &read_fds)) {
                         if (try_recv(el) == StatusCode::OK && el.recv_buffer.size() >= el.recv_buffer.current_packet_size()) {
                             // LOG(Debug) << "Info buffer " << el.recv_buffer.size() << endl;
-                            // LOG(Debug) << "SHould be username " << el.recv_buffer.data + 3 << endl;
+                            // LOG(Debug) << "Should be username " << el.recv_buffer.data + 3 << endl;
                             PreLayerInstance.unpack_DataPacket(&el);
                             if (el.state == SessionState::Error) {
                                 // remove client here
@@ -237,6 +237,19 @@ Client * TransferLayer::find_by_username_cnt(Client *client){
     }
     return NULL;
 }
+
+std::vector<std::string> TransferLayer::find_all_user() {
+    // vector for username
+    vector<string> namestack_;
+
+    list<Client>::iterator it = session_set.begin();
+    for(; it != session_set.end(); it++) {
+        namestack_.push_back(it->host_username_);
+    }
+
+    return namestack_;
+}
+
 // //return:
 //     NULL   do nothing
 //     Client *  kick Client *
