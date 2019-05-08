@@ -31,17 +31,25 @@ var PacketType = Object.freeze({
   "SyncUserName": 0x06,
   "OnlineUser": 0x07,
   "SyncEnd": 0x08,
-  "TextUsername": 0x09,
+  "SendInvit": 0x09,
   "OfflineUser": 0x10,
-  "Text": 0x0A,
-  "FileName": 0x0B,
-  "FileInProgress": 0x0C,
-  "GroupTextUserlist": 0x0D,
-  "FileEnd": 0x0E,
-  "FileUsername": 0x0F,
+  "RecvInvit": 0x0A,
+  "InvitResponse": 0x0B,
+  "Board": 0x0C,
+  "SingleCoord": 0x0D,
+  "DoubleCoord": 0x0E,
+  "GameOver": 0x0F,
+  "TextUsername": 0x99,
+  "Text": 0x9A,
+  "FileName": 0x9B,
+  "FileInProgress": 0x9C,
+  "GroupTextUserlist": 0x9D,
+  "FileEnd": 0x9E,
+  "FileUsername": 0x9F,
 });
 
 // Server response type
+/*
 var ResponseType = Object.freeze({
   "UserNotExist": 0,
   "OK": 1,
@@ -49,6 +57,20 @@ var ResponseType = Object.freeze({
   "Wrong": 3,
   "ErrorOccurs": 4,
   "AlreadyLoggedIn": 5,
+});
+*/
+
+// ZZY
+// Server response type
+var ResponseType = Object.freeze({
+  "UserNotExist": 0,
+  "OK": 1,
+  "RefuseInvit": 2,
+  "Wrong": 3,
+  "ErrorOccurs": 4,
+  "AlreadyLoggedIn": 5,
+  "Busy": 6,
+  "ChangePassword": 62
 });
 
 /*
@@ -85,30 +107,35 @@ var SessionState = Object.freeze({
 // State machine definition
 // Defined almost sequentially. Actions corresponding to a state are in comments.
 var SessionState = Object.freeze({
-  "Init": 0, // send check
-  "WaitForInfoResponse": 1, // Match user in database, password not received yet
+  "FirstThingsFirst": 0,
+  "Init": 1, // send check
+  "WaitForInfoResponse": 2, // Match user in database, password not received yet
   // If user exists, send a response
-  "WaitForPasswordResponse": 2, // Send UserCheck response
-  "UserExists": 3, // Branch #1, receive password and match password in database
-  "PasswordReset": 4, // First login. Receive new password and update database
-  "AlreadyLoggedIn": 5, // Kick off the logged in session
-  "UserSync": 6, // Merge #1, send preference
-  "HistorySync": 7, // Send history
+  "WaitForPasswordResponse": 3, // Send UserCheck response
+  "UserExists": 4, // Branch #1, receive password and match password in database
+  "PasswordReset": 5, // First login. Receive new password and update database
+  "AlreadyLoggedIn": 6, // Kick off the logged in session
+  "UserSync": 7, // Merge #1, send preference
   "ClientWaiting": 8,
+  "ClientInvited": 9,
+  "ClientInviting": 10,
+  //"Draw": 11,
+  "InGame": 11,
+
+  "HistorySync": 67, // Send history
   // Branch #2 and Merge #2, branch according to the media_type
   // of the next packet (either received or sent).
   // Send has priority over read.
-  "TextUsername": 9, // Target text username
-  "Text": 10, // Text data
-  "FileUsername": 11, // Target file username
-  "FileName": 12,
-  "FileInProgress": 13, // Until a FileEnd packet is received
-  "GroupUsernameList": 14, // Target group username list
-  "GroupText": 15, // Target group text data
+  "TextUsername": 69, // Target text username
+  "Text": 60, // Text data
+  "FileUsername": 61, // Target file username
+  "FileName": 62,
+  "FileInProgress": 63, // Until a FileEnd packet is received
+  "GroupUsernameList": 64, // Target group username list
+  "GroupText": 65, // Target group text data
   // go back to ServerWaiting state
   // ZZY
-  "FirstThingsFirst": 20,
-  "GreatWall": 99,
+  "GreatWall": 99
 });
 
 
@@ -133,6 +160,8 @@ angular
       // var alertPoped = false;
       var onlineUserList = [];
       var hasValidUser = false;
+      var clickedInviteButton = false;
+      var personInvited;
 
       var ChatService = function (socket, settings) {
 
@@ -661,7 +690,7 @@ angular
 
         let packet = Buffer.concat([packetTypeBuffer, payloadLengthBuffer, payloadBuffer]);
         return packet;
-      }
+      };
       var constructPacket = ChatService.prototype.constructPacket;
 
       // Init: send check packet, original one.
@@ -793,7 +822,7 @@ angular
                 // read the byte at index 3
                 // 0: Host2User, 1: User2Host
                 // store username
-                let data = globalSelf.decodeSyncUserNamePacket(rawData);
+                let data = globalSelf.decodeUserNamePacket(rawData);
                 if (data.direction == 0) {
                   globalSelf.cache.lastUsername = globalUsername;
                 } else {
@@ -896,23 +925,37 @@ angular
           }
           else if (rawData.packetType == PacketType.OnlineUser) {
           console.log('get new OnlineUser packet');
-          if (onlineUserList.indexOf(globalSelf.decodeSyncUserNamePacket(rawData)) < 0) {
-            onlineUserList.push(globalSelf.decodeSyncUserNamePacket(rawData));
+          if (onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)) < 0) {
+            onlineUserList.push(globalSelf.decodeUserNamePacket(rawData));
             console.log('new online user:', onlineUserList[onlineUserList.length - 1]);
           } else {
             console.log('user already exist in the list');
           }
           return;
-        } else if (rawData.packetType == PacketType.OfflineUser) {
+        }
+          else if (rawData.packetType == PacketType.OfflineUser) {
           console.log('get new OfflineUser packet');
-          if (onlineUserList.indexOf(globalSelf.decodeSyncUserNamePacket(rawData)) >= 0) {
-            let offline = onlineUserList.splice(onlineUserList.indexOf(globalSelf.decodeSyncUserNamePacket(rawData)), 1);
+          if (onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)) >= 0) {
+            let offline = onlineUserList.splice(onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)), 1);
             console.log('offline user:', offline[0]);
           } else {
             console.log('user not exist in the list');
           }
           return;
-        } else {
+        }
+          else if (rawData.packetType == PacketType.RecvInvit && (sessionState = SessionState.ClientInvited || sessionState == SessionState.InGame)) {
+            // Busy gaming
+            console.log('busy gaming');
+            const buf = Buffer.allocUnsafe(1);
+            buf.writeUInt8(ResponseType.Busy, 0);
+            let packet = constructPacket({
+              packetType: PacketType.InvitResponse,
+              payload: buf
+            });
+            sendPacket(packet);
+            return;
+          }
+          else {
           console.log('Empty rawData');
         }
       }
@@ -940,8 +983,8 @@ angular
             console.log('WaitForInfoResponse');
             if (rawData.packetType != PacketType.InfoResponse) {
               // error
-              console.log('rawData.packetType: ', rawData.packetType);
-              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ', rawData.packetType).then(
+              console.log('rawData.packetType: '+ rawData.packetType);
+              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType).then(
                   // globalSelf.killConnection()
               );
             } else {
@@ -999,8 +1042,8 @@ angular
             // receive password
             if (rawData.packetType != PacketType.PasswordResponse) {
               // error
-              console.log('rawData.packetType: ', rawData.packetType);
-              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ', rawData.packetType).then(
+              console.log('rawData.packetType: '+ rawData.packetType);
+              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType).then(
                   // globalSelf.killConnection()
               );
             } else {
@@ -1044,19 +1087,18 @@ angular
               }
             }
             break;
-
           case SessionState.UserSync:
             if (rawData.packetType != PacketType.SyncUserName && rawData.packetType != PacketType.SyncEnd) {
               // error
-              console.log('rawData.packetType: ', rawData.packetType);
+              console.log('rawData.packetType: '+ rawData.packetType);
               smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType').then(
                   // globalSelf.killConnection()
               );
             } else {
               switch (rawData.packetType) {
                 case PacketType.SyncUserName:
-                  if (onlineUserList.indexOf(globalSelf.decodeSyncUserNamePacket(rawData)) < 0) {
-                    onlineUserList.push(globalSelf.decodeSyncUserNamePacket(rawData));
+                  if (onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)) < 0) {
+                    onlineUserList.push(globalSelf.decodeUserNamePacket(rawData));
                     console.log('online user:', onlineUserList[onlineUserList.length-1]);
                   }
                   break;
@@ -1077,47 +1119,115 @@ angular
               }
             }
             break;
-/*
-          case SessionState.HistorySync:
-            switch (rawData.packetType) {
-              case PacketType.SyncUserName:
-                // read the byte at index 3
-                // 0: Host2User, 1: User2Host
-                // store username
-                let data = globalSelf.decodeSyncUserNamePacket(rawData);
-                if (data.direction == 0) {
-                  globalSelf.cache.lastUsername = globalUsername;
-                } else {
-                  globalSelf.cache.lastUsername = data.username;
-                }
-                // sessionState = SessionState.History;
-                break;
-
-              case PacketType.History:
-                let historyText = globalSelf.decodeTextPacket(rawData);
-                // update view to show chat history
-
-                $rootScope.$apply(function () {
-                  globalSelf.cache.messages.push({
-                    username: globalSelf.cache.lastUsername,
-                    body: historyText,
-                  });
-                });
-
-                setTimeout(function () {
-                  jQuery(".messages").getNiceScroll(0).resize();
-                  return jQuery(".messages").getNiceScroll(0).doScrollTop(999999, 999);
-                }, 100);
-                break;
-              case PacketType.SyncEnd:
-                sessionState = SessionState.ClientWaiting;
-                break;
-
-              default:
-                break;
+          case SessionState.ClientWaiting:
+            // Wait two things
+            // 1. invitation button click.
+            // 2. a "RecvInvit" packet has been received.
+            // TODO: Must wait after invitation button has been pressed.
+            // TODO: This means that when click invitation button, changeState() should be triggered.
+            if (clickedInviteButton) {
+              // Invite others
+              // Here the invitation button has been clicked.
+              let packet = constructPacket({
+                packetType: PacketType.SendInvit,
+                payload: globalSelf.user()
+              });
+              sendPacket(packet);
+              sessionState = SessionState.ClientInviting;
+            }
+            else {
+              // Being invited
+              // Here nothing has been done by user, this state is triggered because a packet has been received.
+              sessionState = SessionState.ClientInvited;
+              changeState(rawData);
             }
             break;
-*/
+          case SessionState.ClientInvited:
+            // In this state, the invited client will process the received "RecvInvit" packet.
+            if (rawData.packetType === PacketType.RecvInvit) {
+              let inviter = globalSelf.decodeUserNamePacket(rawData);
+              smalltalk
+                  .confirm('邀请确认', '是否接受' + inviter + '的邀请？')
+                  .then(() => {
+                    // invitation accepted
+                    console.log('Accepted invitation from ' + inviter);
+                    const buf = Buffer.allocUnsafe(1);
+                    buf.writeUInt8(ResponseType.OK, 0);
+                    let packet = constructPacket({
+                      packetType: PacketType.InvitResponse,
+                      payload: buf
+                    });
+                    sendPacket(packet);
+                    sessionState = SessionState.InGame;
+                    changeState();
+                  })
+                  .catch(() => {
+                    // invitation refused
+                    console.log('Refused invitation from ' + inviter);
+                    const buf = Buffer.allocUnsafe(1);
+                    buf.writeUInt8(ResponseType.RefuseInvit, 0);
+                    let packet = constructPacket({
+                      packetType: PacketType.InvitResponse,
+                      payload: buf
+                    });
+                    sendPacket(packet);
+                    // Wait to invite others or to be invited.
+                    sessionState == SessionState.ClientWaiting;
+                  });
+            } else {
+              // Get wrong packet
+              console.log('rawData.packetType: '+ rawData.packetType);
+              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType).then(
+                  // globalSelf.killConnection()
+              );
+            }
+            break;
+          case SessionState.ClientInviting:
+            // In this state, the inviting client is waiting for the response of the invited client.
+            // This state will only be triggered after receiving a "InvitResponse" packet.
+            if (rawData.packetType != PacketType.InvitResponse) {
+              // Get wrong packet
+              console.log('rawData.packetType: '+ rawData.packetType);
+              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType).then(
+                  // globalSelf.killConnection()
+              );
+            }
+            else {
+              let infoData = rawData.payload.readUInt8(0);
+              switch (infoData) {
+                case ResponseType.UserNotExist:
+                  smalltalk.alert('警告', '您选中的用户不存在，请重新选择或等待被选');
+                  sessionState = SessionState.ClientWaiting;
+                  break;
+                case ResponseType.OK:
+                  smalltalk.alert('通知', '对方同意了您的请求，即将进入游戏').then(
+                      function () {
+                        sessionState = SessionState.InGame;
+                        changeState();
+                      }
+                  );
+                  break;
+                case ResponseType.RefuseInvit:
+                  smalltalk.alert('警告', '对方拒绝了您的请求，请重新选择或等待被选');
+                  sessionState = SessionState.ClientWaiting;
+                  break;
+                case ResponseType.Busy:
+                  smalltalk.alert('警告', '对方正在进行游戏或正在处理其他人的邀请，请重新选择或等待被选');
+                  sessionState = SessionState.ClientWaiting;
+                  break;
+                default:
+                  smalltalk.alert('警告', '不可处理的ResponseType: ' + infoData).then(
+                      // globalSelf.killConnection()
+                  );
+              }
+            }
+            break;
+          case SessionState.InGame:
+            // All two players successfully paired.
+            // Now draw planes and play games.
+              
+            break;
+          /*
           case SessionState.ClientWaiting:
             if (isSend) {
               switch (rawData.packetType) {
@@ -1155,12 +1265,53 @@ angular
                   }, 100);
 
                   break;
-                default:
-                  break;
-              }
+          case SessionState.HistorySync:
+            switch (rawData.packetType) {
+              case PacketType.SyncUserName:
+                // read the byte at index 3
+                // 0: Host2User, 1: User2Host
+                // store username
+                let data = globalSelf.decodeUserNamePacket(rawData);
+                if (data.direction == 0) {
+                  globalSelf.cache.lastUsername = globalUsername;
+                } else {
+                  globalSelf.cache.lastUsername = data.username;
+                }
+                // sessionState = SessionState.History;
+                break;
+
+              case PacketType.History:
+                let historyText = globalSelf.decodeTextPacket(rawData);
+                // update view to show chat history
+
+                $rootScope.$apply(function () {
+                  globalSelf.cache.messages.push({
+                    username: globalSelf.cache.lastUsername,
+                    body: historyText,
+                  });
+                });
+
+                setTimeout(function () {
+                  jQuery(".messages").getNiceScroll(0).resize();
+                  return jQuery(".messages").getNiceScroll(0).doScrollTop(999999, 999);
+                }, 100);
+                break;
+              case PacketType.SyncEnd:
+                sessionState = SessionState.ClientWaiting;
+                break;
+
+              default:
+                break;
             }
+            break;
+*/
+          default:
+            break;
         }
       };
+
+      //   }
+      // };
 
 
 
@@ -1194,49 +1345,20 @@ angular
         // globalSelf.socketClose();
       };
 
-/*
-      ChatService.prototype.decodeConfigurationPacket = function (rawData) {
-        let conf = {
-          historyLength: rawData.payload.readUInt16BE(0),
-          color1: {
-            r: rawData.payload.readUInt8(2),
-            g: rawData.payload.readUInt8(3),
-            b: rawData.payload.readUInt8(4),
-          },
-          color2: {
-            r: rawData.payload.readUInt8(5),
-            g: rawData.payload.readUInt8(6),
-            b: rawData.payload.readUInt8(7),
-          },
-        };
-        return conf;
-      };
-*/
-/*
-      ChatService.prototype.decodeSyncUserNamePacket = function (rawData) {
-        console.log('decodeSyncUserNamePacket', rawData);
-        let ret = {
-          direction: rawData.payload.readUInt8(0),
-          username: rawData.payload.slice(1, rawData.payload.length).toString(),
-        };
-        return ret;
-      };
-*/
-      ChatService.prototype.decodeSyncUserNamePacket = function (rawData) {
+
+      ChatService.prototype.decodeUserNamePacket = function (rawData) {
         console.log('decodeUsernamePacket', rawData);
         let username = rawData.payload.toString();
         return username;
       };
 
-      ChatService.prototype.decodeTextPacket = function (rawData) {
-        let text = rawData.payload.toString();
 
-        return text;
-      };
+      // ChatService.prototype.decodeTextPacket = function (rawData) {
+      //   let text = rawData.payload.toString();
+      //
+      //   return text;
+      // };
 
-      ChatService.prototype.todo = function (packet) {
-
-      }
       // Instantiates a new chat service
       return new ChatService($Socket.socket, $Settings);
     }
