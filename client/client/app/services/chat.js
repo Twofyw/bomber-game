@@ -129,6 +129,7 @@ angular
       var wasConnected = false;
       var alertPoped = false;
       var hasValidUser = false;
+      var onlineUserList = [];
 
       var ChatService = function (socket, settings) {
 
@@ -291,7 +292,7 @@ angular
       };
 
       ChatService.prototype.validOnline = function () {
-        return this.user() && hasValidUser;
+        return this.settings.user() && hasValidUser;
       };
 
       /**
@@ -871,7 +872,7 @@ angular
         // @rawData: { packetType: int, payload: Buffer }
         // @isSend: true for sending packet
         console.log('changeState, sessionState =', sessionState);
-        if (sessionState != SessionState.FirstThingsFirst) {
+        if (rawData) {
           console.log('changeState rawData', rawData);
           // console.log('changeState, sessionState =', sessionState);
 
@@ -890,6 +891,12 @@ angular
         }
 
         switch (sessionState) {
+          case SessionState.GreatWall:
+            console.log('Howdy! This is temporarily the end!');
+            console.log('hasValidUser: ', hasValidUser);
+            console.log('validOnline: ', globalSelf.validOnline());
+            smalltalk.alert('警告', '目前暂时在这里告一段落，再见！');
+            break;
           case SessionState.FirstThingsFirst:
             hasValidUser = false;
             console.log('app start');
@@ -977,24 +984,6 @@ angular
                   console.log('Wrong password packet type');
                   globalSelf.killConnection();
                   break;
-                  /*
-                case ResponseType.ChangePassword:
-                  // popup reset password prompt
-                  // send password packet
-                  // continue waiting for password response
-                  // so no need to change state
-
-                  console.log('ResponseType.ChangePassword');
-                  smalltalk.prompt('您需要更改您的初始密码', '输入您的新密码').then(function (value) {
-                    sendPacket({
-                      packetType: PacketType.Password,
-                      payload: value
-                    });
-                    console.log('password reset!');
-                  });
-                  sessionState = SessionState.UserSync;
-                  break;
-                   */
                 case ResponseType.Wrong:
                   // display message on label
                   // and prompt for reset password
@@ -1024,49 +1013,36 @@ angular
               }
             }
             break;
-
           case SessionState.UserSync:
-            if (rawData.packetType != PacketType.Configuration) {
+            if (rawData.packetType != PacketType.SyncUserName && rawData.packetType != PacketType.SyncEnd) {
               // error
               console.log('rawData.packetType: ', rawData.packetType);
-              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ', rawData.packetType).then(
+              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType').then(
                   globalSelf.killConnection()
               );
             } else {
-              console.log('configuration');
-
               switch (rawData.packetType) {
                 case PacketType.SyncUserName:
-                  globalSelf.cache.lastUsername = globalSelf.decodeSyncUserNamePacket(rawData);
-                  break;
-
-                case PacketType.History:
-                  let historyText = globalSelf.decodeTextPacket(rawData);
-                  // update view to show chat history
-
-                  $rootScope.$apply(function () {
-                    globalSelf.cache.messages.push({
-                      username: globalSelf.cache.lastUsername,
-                      body: historyText,
-                    });
-                  });
-
-                  setTimeout(function () {
-                    jQuery(".messages").getNiceScroll(0).resize();
-                    return jQuery(".messages").getNiceScroll(0).doScrollTop(999999, 999);
-                  }, 100);
+                  if (onlineUserList.indexOf(globalSelf.decodeSyncUserNamePacket(rawData)) < 0) {
+                    onlineUserList.push(globalSelf.decodeSyncUserNamePacket(rawData));
+                    console.log('online user:', onlineUserList[onlineUserList.length-1]);
+                  }
                   break;
                 case PacketType.SyncEnd:
-                  sessionState = SessionState.ClientWaiting;
+                  console.log('sync online user end');
+                  sessionState = SessionState.GreatWall;
+                  changeState();
                   break;
 
                 default:
+                  console.log('sync pack unknown');
+                  smalltalk.alert('警告', '未知packet类型').then(
+                      function () {
+                        globalSelf.killConnection();
+                      }
+                  );
                   break;
               }
-              
-              
-              globalSelf.cache.lastUsername = globalSelf.decodeUsernamePacket(rawData);
-              sessionState = SessionState.GreatWall;
             }
             break;
 /*
@@ -1146,14 +1122,6 @@ angular
                     return jQuery(".messages").getNiceScroll(0).doScrollTop(999999, 999);
                   }, 100);
 
-                  break;
-                case SessionState.GreatWall:
-                  console.log('Howdy! This is temporarily the end!');
-                  smalltalk.alert('警告', '目前暂时在这里告一段落，再见！').then(
-                      function() {
-                        globalSelf.killConnection();
-                      }
-                  );
                   break;
                 default:
                   break;
