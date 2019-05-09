@@ -1,5 +1,3 @@
-
-
 # Simple Chat Room Package Design  
 
 ## Frame type (all)
