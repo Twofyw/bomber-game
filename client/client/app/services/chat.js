@@ -1042,11 +1042,15 @@ angular
           // these packets will be processed through the whole process.
           if (rawData.packetType == PacketType.Refuse) {
             if (rawData.payload.readUInt8(0) == ResponseType.ErrorOccurs) {
-              smalltalk.alert('警告', '因其他客户端登陆，您已下线');
+              smalltalk
+                  .alert('警告', '因其他客户端用您的账号登陆，您已下线')
+                  .then(() => {
+                    globalSelf.killConnection();
+                  });
               return;
             } else {
               console.log('changeState rawData', rawData);
-              smalltalk.alert('警告', '您已将用您的账号登陆的其他客户端下线');
+              smalltalk.alert('通知', '用您的账号登陆的其他客户端已经下线');
               return;
             }
           }
@@ -1132,7 +1136,9 @@ angular
               // error
               console.log('rawData.packetType: '+ rawData.packetType);
               smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType).then(
-                  // globalSelf.killConnection()
+                  () => {
+                    globalSelf.killConnection();
+                  }
               );
             } else {
               // decode payload here
