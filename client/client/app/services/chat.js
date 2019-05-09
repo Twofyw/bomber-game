@@ -930,6 +930,7 @@ angular
           console.log('changeState rawData', rawData);
           // console.log('changeState, sessionState =', sessionState);
 
+          // these packets will be processed through the whole process.
           if (rawData.packetType == PacketType.Refuse) {
             if (rawData.payload.readUInt8(0) == ResponseType.ErrorOccurs) {
               smalltalk.alert('警告', '因其他客户端登陆，您已下线');
@@ -960,7 +961,7 @@ angular
           }
           return;
         }
-          else if (rawData.packetType == PacketType.RecvInvit && (sessionState = SessionState.ClientInvited || sessionState == SessionState.InGame)) {
+          else if (rawData.packetType == PacketType.RecvInvit && (sessionState == SessionState.ClientInvited || sessionState == SessionState.ClientInviting || sessionState == SessionState.InGame)) {
             // Busy gaming
             console.log('busy gaming');
             const buf = Buffer.allocUnsafe(1);
@@ -970,6 +971,23 @@ angular
               payload: buf
             });
             sendPacket(packet);
+            return;
+          }
+          else if (rawData.packetType == PacketType.GameOver) {
+            if (sessionState == SessionState.ClientWaiting || sessionState == SessionState.ClientInvited || sessionState == SessionState.ClientInviting || sessionState == SessionState.InGame) {
+              console.log('game over, you lose');
+              smalltalk.alert('警告', '您输了！').then(
+                  function () {
+                    sessionState == SessionState.ClientWaiting;
+                  }
+              );
+            }
+            else {
+              console.log('rawData.packetType: '+ rawData.packetType);
+              smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType + ', sessionState: ' + sessionState).then(
+                  // globalSelf.killConnection()
+              );
+            }
             return;
           }
           else {
