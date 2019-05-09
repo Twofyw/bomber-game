@@ -184,6 +184,17 @@ angular
 
         ChatService.prototype.rowLabels = Array.apply(null, {length: 10}).map(Number.call, Number);
         ChatService.prototype.colLabels = Array.apply(null, {length: 10}).map(Number.call, Number);
+        // debug
+        ChatService.prototype.gameMap = [];
+        for(let i = 0; i < 10; i++) {
+          ChatService.prototype.gameMap.push(Array.apply(null,{length: 10}).map(function() { return 0; }));
+        }
+        // ChatService.prototype.mapToColor = function (planeCode) {
+        //   switch (planeCode) {
+        //     case
+        //
+        //   }
+        // }
 
 
         // Register socket callbacks
