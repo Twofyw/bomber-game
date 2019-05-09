@@ -156,17 +156,19 @@ angular
       var sessionState = SessionState.FirstThingsFirst;
       var globalSelf;
       var globalSocket;
-      // var wasConnected = false;
-      // var alertPoped = false;
+      var wasConnected = false;
+      var alertPoped = false;
       var hasValidUser = false;
       var clickedInviteButton = false;
       var personInvited;
+      var notResponsingInvitation = true;
+      var rivalName = "";
 
       var ChatService = function (socket, settings) {
 
         var self = this;
         globalSelf = this;
-        ChatService.prototype.onlineUserList = ['debug', 'debug2'];
+        ChatService.prototype.onlineUserList = [];
 
         globalSelf.socket = socket;
         globalSelf.settings = settings;
@@ -231,14 +233,24 @@ angular
       ChatService.prototype.demo = function (row, col, checkBox) {
         console.log('demo', row, col, checkBox);
       };
+
+      // On click send request.
       ChatService.prototype.sendRequest = function (user) {
-        //clickedInviteButton = true;
-        console.log("send request to: ", user);
-        let rawData = {
-          packetType: PacketType.SendInvit,
-          payload: user
-        };
-        changeState(rawData, true);
+        // should only be clicked when client waiting.
+        if (sessionState == SessionState.ClientInviting) {
+          smalltalk.alert("警告", "您刚才邀请了别人，正在等待对方回复，此时不可以发送邀请请求");
+        } else if (sessionState == SessionState.ClientInvited) {
+          smalltalk.alert("警告", "您已被人邀请，此时不可以发送邀请请求");
+        } else if (sessionState == SessionState.InGame || sessionState == SessionState.GreatWall) {
+          smalltalk.alert("警告", "您正在游戏的过程中，此时不可以发送邀请请求");
+        } else {
+          console.log("send request to: ", user);
+          let rawData = {
+            packetType: PacketType.SendInvit,
+            payload: user
+          };
+          changeState(rawData, true);
+        }
       };
 
       ChatService.prototype.checkBox = false;
@@ -258,7 +270,7 @@ angular
       ChatService.prototype.socketClose = function socketClose() {
         // if state is kicked off, pop up a dialog and destroy socket
         if (!alertPoped) {
-          smalltalk.alert('警告', '服务器端不在线');
+          smalltalk.alert('警告', '服务器端不在线，请联系服务器管理员');
           alertPoped = true;
         }
         // globalSocket.destroy();
@@ -978,9 +990,11 @@ angular
           }
           return;
         }
-          else if (rawData.packetType == PacketType.RecvInvit && (sessionState == SessionState.ClientInviting || sessionState == SessionState.InGame)) {
+          // busy
+          else if (rawData.packetType == PacketType.RecvInvit && (sessionState == SessionState.ClientInviting || sessionState == SessionState.InGame || (sessionState == SessionState.ClientInvited && !notResponsingInvitation))) {
             // Busy gaming
             console.log('busy gaming');
+            /*
             const buf = Buffer.allocUnsafe(1);
             buf.writeUInt8(ResponseType.Busy, 0);
             let packet = constructPacket({
@@ -988,6 +1002,7 @@ angular
               payload: buf
             });
             sendPacket(packet);
+             */
             return;
           }
           else if (rawData.packetType == PacketType.GameOver) {
@@ -1176,6 +1191,7 @@ angular
             // 2. a "RecvInvit" packet has been received.
             // TODO: Must wait after invitation button has been pressed.
             // TODO: This means that when click invitation button, changeState() should be triggered.
+            rivalName = "";
             if (isSend) {
               // Invite others
               // Here the invitation button has been clicked.
@@ -1194,13 +1210,16 @@ angular
             break;
           case SessionState.ClientInvited:
             // In this state, the invited client will process the received "RecvInvit" packet.
-            if (rawData.packetType === PacketType.RecvInvit) {
+            if (rawData.packetType === PacketType.RecvInvit && notResponsingInvitation) {
+              notResponsingInvitation = false;
+              console.log('notResponsingInvitation: ', notResponsingInvitation);
               let inviter = globalSelf.decodeUserNamePacket(rawData);
               smalltalk
                   .confirm('邀请确认', '是否接受' + inviter + '的邀请？')
                   .then(() => {
                     // invitation accepted
                     console.log('Accepted invitation from ' + inviter);
+                    rivalName = inviter;
                     const buf = Buffer.allocUnsafe(1);
                     buf.writeUInt8(ResponseType.OK, 0);
                     let packet = constructPacket({
@@ -1208,6 +1227,7 @@ angular
                       payload: buf
                     });
                     sendPacket(packet);
+                    notResponsingInvitation = true;
                     sessionState = SessionState.InGame;
                     changeState();
                   })
@@ -1221,8 +1241,9 @@ angular
                       payload: buf
                     });
                     sendPacket(packet);
+                    notResponsingInvitation = true;
                     // Wait to invite others or to be invited.
-                    sessionState == SessionState.ClientWaiting;
+                    sessionState = SessionState.ClientWaiting;
                   });
             } else {
               // Get wrong packet

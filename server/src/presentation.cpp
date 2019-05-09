@@ -75,7 +75,7 @@ vector<uint8_t> PresentationLayer::pack_Response(Message_To_Pre message){
             temp.push_back((uint8_t)(length >> 8) ); 
             temp.push_back((uint8_t)length );
             temp.push_back(*((uint8_t*)&message.respond_));  
-            break;          
+            break;
     }
 
     return temp;
@@ -287,6 +287,13 @@ StatusCode PresentationLayer::pack_Message(Client *client){
         }
     }
     
+    //WaitInfoResponse:
+    if((client->state == SessionState::WaitInvitResponse) ) {
+        if(message.type_ == PacketType::InvitResponse){
+            client->send_buffer.push(pack_Response(message) );
+        }
+    }
+
     //InGame:
     if(client->state == SessionState::InGame){
         //send board set by opponent
@@ -419,10 +426,10 @@ void PresentationLayer::unpack_Board(DataPacket packet, Message_To_App * message
 
     int x1,x2,y1,y2,curr = 1;
     for(iter = packet.data.begin(); iter != packet.data.end(); iter+=4){
-        x1 = (int)(*iter);
-        y1 = (int)(*(iter+1));
-        x2 = (int)(*(iter+2));
-        y2 = (int)(*(iter+3));
+        x1 = (int)(*iter - '0');
+        y1 = (int)(*(iter+1) - '0');
+        x2 = (int)(*(iter+2) - '0');
+        y2 = (int)(*(iter+3) - '0');
         
         message->plane_coord_[(curr-1)*4  ] = (int)(*iter);
         message->plane_coord_[(curr-1)*4+1] = (int)(*(iter+1));
@@ -498,10 +505,10 @@ void PresentationLayer::unpack_DoubleCoord(DataPacket packet, Message_To_App * m
     vector<uint8_t>::iterator iter;
     
     iter = packet.data.begin();
-    message->head_x = (int)(*iter);
-    message->head_y = (int)(*(iter+1));
-    message->tail_x = (int)(*(iter+2));
-    message->tail_y = (int)(*(iter+3));
+    message->head_x = (int)(*iter - '0');
+    message->head_y = (int)(*(iter+1) - '0');
+    message->tail_x = (int)(*(iter+2)) - '0';
+    message->tail_y = (int)(*(iter+3) - '0');
 
     return;
 }

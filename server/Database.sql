@@ -10,3 +10,6 @@ alter table account add primary key(username);
 insert into account(username, password) values('Novate', MD5('123456'));
 insert into account(username, password) values('Twofyw', MD5('123456'));
 insert into account(username, password) values('Larry', MD5('123456'));
+insert into account(username, password) values('Albert', MD5('123456'));
+insert into account(username, password) values('Beth', MD5('123456'));
+insert into account(username, password) values('Cindy', MD5('123456'));
