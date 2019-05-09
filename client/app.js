@@ -64,6 +64,8 @@ app.on('ready', function () {
 
   win.setMenu(menu);
 
+  win.maximize()
+
   // and load the index.html of the app.
   win.loadURL('file://' + path.join(__dirname, './client/index.html'));
   windows.push(win);

@@ -185,16 +185,96 @@ angular
         ChatService.prototype.rowLabels = Array.apply(null, {length: 10}).map(Number.call, Number);
         ChatService.prototype.colLabels = Array.apply(null, {length: 10}).map(Number.call, Number);
         // debug
-        ChatService.prototype.gameMap = [];
-        for(let i = 0; i < 10; i++) {
-          ChatService.prototype.gameMap.push(Array.apply(null,{length: 10}).map(function() { return 0; }));
-        }
-        // ChatService.prototype.mapToColor = function (planeCode) {
-        //   switch (planeCode) {
-        //     case
-        //
-        //   }
+        // ChatService.prototype.gameMap = [];
+        // for(let i = 0; i < 10; i++) {
+        //   ChatService.prototype.gameMap.push(Array.apply(null,{length: 10}).map(function() { return 0; }));
         // }
+        ChatService.prototype.gameMap = [
+          [0,1,2,3,4,5,6,7,8,9],
+          [0,0,0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0,0,0],
+          [0,0,0,0,2,0,0,0,0,0],
+          [0,0,1,1,1,1,1,0,0,0],
+          [0,0,0,0,1,0,0,0,0,0],
+          [0,0,0,1,3,1,0,0,0,0],
+          [0,0,0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0,0,0]
+        ];
+
+        ChatService.prototype.switchDoubleCord = function () {
+
+        };
+
+        ChatService.prototype.opponentName = 'Twofyw';
+        ChatService.prototype.myName = 'Novate';
+        ChatService.prototype.isOurMove = true;
+        ChatService.prototype.isDoubleCord = false;
+
+        ChatService.prototype.doubleCordBtnStyle = function (isDoubleCord) {
+          let colorHex = isDoubleCord ? '#e17055' : '#0069d9';
+          return {
+            "background-color": colorHex,
+            "border-color":  colorHex
+          };
+        }
+        ChatService.prototype.doubleCordBtnClick = function () {
+          this.isDoubleCord = !this.isDoubleCord;
+        }
+        ChatService.prototype.doubleCordBtnModel = function (isDoubleCord) {
+          let messege = isDoubleCord ? '使用双坐标' : '使用单坐标';
+          console.log(messege);
+          return messege;
+        }
+
+
+        ChatService.prototype.mapToColor = function (planeCode) {
+          // return 1;
+          // let planeNumber = Math.floor(planeCode / 10);
+          let location = planeCode % 10;
+          let colorHex = '#b2bec3';
+          switch (location) {
+            // body
+            case 1:
+            case 4:
+              colorHex = '#fdcb6e';
+              return {
+                "background-color": colorHex,
+                "border-color":  colorHex
+              };
+            // head
+            case 2:
+            case 5:
+              colorHex = '#e17055';
+              return {
+                "background-color": colorHex,
+                "border-color":  colorHex
+              };
+            // tail
+            case 3:
+            case 6:
+              colorHex = '#fab1a0';
+              return {
+                "background-color": colorHex,
+                "border-color":  colorHex
+              };
+            //  double cord
+            case 7:
+              colorHex = '#d63031';
+              return {
+                "background-color": colorHex,
+                "border-color":  colorHex
+              };
+            //  default
+            case 0:
+            default:
+              return {
+                "background-color": colorHex,
+                "border-color":  colorHex
+              };
+              // break;
+          }
+        }
 
 
         // Register socket callbacks

@@ -1,8 +1,8 @@
 <div class="left-menu">
-  <form action="#" class="search" ng-init="name = ''">
-    <input placeholder="Search by name..." type="search" name="" id="" ng-model="name">
-    <input type="submit" value="&#xf002;">
-  </form>
+<!--  <form action="#" class="search" ng-init="name = ''">-->
+<!--    <input placeholder="Search by name..." type="search" name="" id="" ng-model="name">-->
+<!--    <input type="submit" value="&#xf002;">-->
+<!--  </form>-->
 <!--    v-bind:style="{height: cellSize}" -->
 <!--    v-bind:style="{height: cellSize, width: cellSize, lineHeight: cellSize}" -->
 <!--     @click="placeCellTouched(i - 1, j - 1)"-->
@@ -12,37 +12,58 @@
 <!--    <div class="xp-cellContainer">-->
 <!--  </div>-->
 <!-- ng-init="isMe = (user.id === $Chat.user().id)"-->
-  {{$Chat.onlineUserList}}
-  <menu class="list-friends">
+  <menu class="list-friends pt-3">
     <li ng-repeat="user in $Chat.onlineUserList">
 <!--      <img width="50" height="50" ng-src="{{ user.image }}">-->
       <div class="info">
         <div class="user" ng-bind="user">{{user}}</div>
         <div class="status on" ng-cloak>
 <!--          {{ $Chat.isTyping(user) ? 'typing...' : 'online' }}-->
-          <a class="status inactive" href="javascript:void(0);" ng-click="$Chat.sendRequest(user)">(Send request...)</a>
+          <a class="status inactive" href="javascript:void(0);" ng-click="$Chat.sendRequest(user)">Send request...</a>
         </div>
       </div>
     </li>
   </menu>
 </div>
 <!--class="row" --><!--class="col-md" -->
-
-<p>{{$Chat.onlineUserList}}</p>
-<li *ngFor="let item of $Chat.getOnlineUserList(); index as i; trackBy: trackByFn">
-    {{i}} {{item}}
-</li>
-
 <div class="chat text-center">
-    <div class="botton-grid btn-group btn-matrix">
-        <div ng-repeat="colLabel in $Chat.colLabels">
-            <div ng-repeat="rowLabel in $Chat.rowLabels">
-                <button class="badge btn-primary" ng-bind="mapToIcon($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.checkBox)"></button>
+    <div class="boards">
+        <div class="oppo-background">
+            <div class="align-right text-left">
+                <h5>Opponent progress<br><span class="badge badge-secondary">{{$Chat.opponentName}}</span></h5>
+            </div>
+            <div class="our-board btn-group btn-matrix">
+                <div ng-repeat="colLabel in $Chat.colLabels">
+                    <div ng-repeat="rowLabel in $Chat.rowLabels">
+                        <!--                <button class="badge btn-primary" ng-bind="mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.checkBox)">1234</button>-->
+                        <button class="badge btn-primary" ng-style="$Chat.mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.mapToColor($Chat.gameMap[rowLabel][colLabel]))"> </button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <input ng-model="$Chat.checkBox" type="checkbox" class="form-check-input">
 
+        <div class="form-group col-12">
+            <hr>
+        </div>
+
+        <div class="align-right text-left">
+            <h5>Guess now!<br><span class="badge badge-secondary">{{$Chat.myName}}</span></h5>
+        </div>
+        <div class="their-board btn-group btn-matrix">
+            <div ng-repeat="colLabel in $Chat.colLabels">
+                <div ng-repeat="rowLabel in $Chat.rowLabels">
+                    <!--                <button class="badge btn-primary" ng-bind="mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.checkBox)">1234</button>-->
+                    <button class="badge btn-primary" ng-style="$Chat.mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.isDoubleCord)"> </button>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="text-left align-right double-cord">
+            <button ng-style="$Chat.doubleCordBtnStyle($Chat.isDoubleCord)"
+                    ng-click="$Chat.doubleCordBtnClick()"
+                    class="btn btn-primary">{{$Chat.doubleCordBtnModel($Chat.isDoubleCord)}}</button>
+        </div>
+    </div>
 
     <!--  <div class="top">-->
 <!--    <div class="avatar" style="float: right; padding-right: 12px">-->
