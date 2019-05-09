@@ -312,7 +312,13 @@ angular
         console.log('demo', row, col, checkBox);
       };
       ChatService.prototype.sendRequest = function (user) {
-        console.log('sendRequest', user);
+        //clickedInviteButton = true;
+        console.log("send request to: ", user);
+        let rawData = {
+          packetType: PacketType.SendInvit,
+          payload: user
+        };
+        changeState(rawData, true);
       };
 
       ChatService.prototype.checkBox = false;
@@ -1034,9 +1040,9 @@ angular
           }
           else if (rawData.packetType == PacketType.OnlineUser) {
           console.log('get new OnlineUser packet');
-          if (onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)) < 0) {
-            onlineUserList.push(globalSelf.decodeUserNamePacket(rawData));
-            console.log('new online user:', onlineUserList[onlineUserList.length - 1]);
+          if (globalSelf.onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)) < 0) {
+            globalSelf.onlineUserList.push(globalSelf.decodeUserNamePacket(rawData));
+            console.log('new online user:', globalSelf.onlineUserList[globalSelf.onlineUserList.length - 1]);
           } else {
             console.log('user already exist in the list');
           }
@@ -1044,15 +1050,15 @@ angular
         }
           else if (rawData.packetType == PacketType.OfflineUser) {
           console.log('get new OfflineUser packet');
-          if (onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)) >= 0) {
-            let offline = onlineUserList.splice(onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)), 1);
+          if (globalSelf.onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)) >= 0) {
+            let offline = globalSelf.onlineUserList.splice(globalSelf.onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)), 1);
             console.log('offline user:', offline[0]);
           } else {
             console.log('user not exist in the list');
           }
           return;
         }
-          else if (rawData.packetType == PacketType.RecvInvit && (sessionState == SessionState.ClientInvited || sessionState == SessionState.ClientInviting || sessionState == SessionState.InGame)) {
+          else if (rawData.packetType == PacketType.RecvInvit && (sessionState == SessionState.ClientInviting || sessionState == SessionState.InGame)) {
             // Busy gaming
             console.log('busy gaming');
             const buf = Buffer.allocUnsafe(1);
@@ -1223,15 +1229,14 @@ angular
             } else {
               switch (rawData.packetType) {
                 case PacketType.SyncUserName:
-                  if (onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)) < 0) {
-                    onlineUserList.push(globalSelf.decodeUserNamePacket(rawData));
-                    console.log('online user:', onlineUserList[onlineUserList.length-1]);
+                  if (globalSelf.onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)) < 0) {
+                    globalSelf.onlineUserList.push(globalSelf.decodeUserNamePacket(rawData));
+                    console.log('online user:', globalSelf.onlineUserList[globalSelf.onlineUserList.length-1]);
                   }
                   break;
                 case PacketType.SyncEnd:
                   console.log('sync online user end');
-                  sessionState = SessionState.GreatWall;
-                  changeState();
+                  sessionState = SessionState.ClientWaiting;
                   break;
 
                 default:
@@ -1251,19 +1256,18 @@ angular
             // 2. a "RecvInvit" packet has been received.
             // TODO: Must wait after invitation button has been pressed.
             // TODO: This means that when click invitation button, changeState() should be triggered.
-            if (clickedInviteButton) {
+            if (isSend) {
               // Invite others
               // Here the invitation button has been clicked.
-              let packet = constructPacket({
-                packetType: PacketType.SendInvit,
-                payload: globalSelf.user()
-              });
-              sendPacket(packet);
+              // clickedInviteButton = false;
+              console.log('invite others');
+              sendPacket(rawData);
               sessionState = SessionState.ClientInviting;
             }
             else {
               // Being invited
               // Here nothing has been done by user, this state is triggered because a packet has been received.
+              console.log('being invited');
               sessionState = SessionState.ClientInvited;
               changeState(rawData);
             }
@@ -1351,7 +1355,8 @@ angular
           case SessionState.InGame:
             // All two players successfully paired.
             // Now draw planes and play games.
-              
+              sessionState = SessionState.GreatWall;
+              changeState();
             break;
           /*
           case SessionState.ClientWaiting:
@@ -1477,7 +1482,6 @@ angular
         let username = rawData.payload.toString();
         return username;
       };
-
 
       // ChatService.prototype.decodeTextPacket = function (rawData) {
       //   let text = rawData.payload.toString();
