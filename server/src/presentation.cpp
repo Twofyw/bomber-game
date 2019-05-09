@@ -488,8 +488,8 @@ void PresentationLayer::unpack_SingleCoord(DataPacket packet, Message_To_App * m
     vector<uint8_t>::iterator iter;
     
     iter = packet.data.begin();
-    message->x = (int)(*iter);
-    message->y = (int)(*(iter+1));
+    message->x = (int)(*iter - '0');
+    message->y = (int)(*(iter+1) - '0');
     
     return;
 }
