@@ -35,8 +35,8 @@
             <div class="our-board btn-group btn-matrix">
                 <div ng-repeat="colLabel in $Chat.colLabels">
                     <div ng-repeat="rowLabel in $Chat.rowLabels">
-                        <!--                <button class="badge btn-primary" ng-bind="mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.checkBox)">1234</button>-->
-                        <button class="badge btn-primary" ng-style="$Chat.mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.mapToColor($Chat.gameMap[rowLabel][colLabel]))"> </button>
+<!--                        <button class="badge btn-primary" ng-style="$Chat.mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.mapToColor($Chat.gameMap[rowLabel][colLabel]))"> </button>-->
+                        <button class="badge btn-primary" ng-style="$Chat.mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.Game.prototype.Click(rowLabel, colLabel, $Chat.isDoubleCord)"> </button>
                     </div>
                 </div>
             </div>
@@ -52,8 +52,7 @@
         <div class="their-board btn-group btn-matrix">
             <div ng-repeat="colLabel in $Chat.colLabels">
                 <div ng-repeat="rowLabel in $Chat.rowLabels">
-                    <!--                <button class="badge btn-primary" ng-bind="mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.checkBox)">1234</button>-->
-                    <button class="badge btn-primary" ng-style="$Chat.mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.isDoubleCord)"> </button>
+                    <button class="badge btn-primary" ng-style="$Chat.mapToColor($Chat.Game.prototype.gameMap[rowLabel][colLabel])" ng-click="$Chat.Game.prototype.Click(rowLabel, colLabel, $Chat.isDoubleCord)"> </button>
                 </div>
             </div>
         </div>
