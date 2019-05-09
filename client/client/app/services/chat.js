@@ -166,7 +166,7 @@ angular
 
         var self = this;
         globalSelf = this;
-        ChatService.prototype.onlineUserList = [];
+        ChatService.prototype.onlineUserList = ['debug', 'debug2'];
 
         globalSelf.socket = socket;
         globalSelf.settings = settings;
@@ -183,7 +183,7 @@ angular
         };
 
         ChatService.prototype.rowLabels = Array.apply(null, {length: 10}).map(Number.call, Number);
-        ChatService.prototype.colLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+        ChatService.prototype.colLabels = Array.apply(null, {length: 10}).map(Number.call, Number);
 
 
         // Register socket callbacks
@@ -217,10 +217,11 @@ angular
         return !!(globalSelf.cache && globalSelf.cache.connected);
       };
 
-      // ChatService.prototype.rowLabels = [1,2,3,4,5,6,7,8,9,10];
-      // ChatService.prototype.colLabels = ['a','b','c','d','e','f','g','h','i','j','k'];
       ChatService.prototype.demo = function (row, col, checkBox) {
         console.log('demo', row, col, checkBox);
+      };
+      ChatService.prototype.sendRequest = function (user) {
+        console.log('sendRequest', user);
       };
 
       ChatService.prototype.checkBox = false;

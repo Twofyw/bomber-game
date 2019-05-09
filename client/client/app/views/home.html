@@ -20,7 +20,7 @@
         <div class="user" ng-bind="user">{{user}}</div>
         <div class="status on" ng-cloak>
 <!--          {{ $Chat.isTyping(user) ? 'typing...' : 'online' }}-->
-          <a class="status inactive" href="javascript:void(0);" ng-click="$Chat.disconnect()">(Send request...)</a>
+          <a class="status inactive" href="javascript:void(0);" ng-click="$Chat.sendRequest(user)">(Send request...)</a>
         </div>
       </div>
     </li>
@@ -35,9 +35,9 @@
 
 <div class="chat text-center">
     <div class="botton-grid btn-group btn-matrix">
-        <div ng-repeat="rowLabel in $Chat.rowLabels">
-            <div ng-repeat="colLabel in $Chat.colLabels">
-                <button class="badge btn-primary" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.checkBox)"> </button>
+        <div ng-repeat="colLabel in $Chat.colLabels">
+            <div ng-repeat="rowLabel in $Chat.rowLabels">
+                <button class="badge btn-primary" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.checkBox)"></button>
             </div>
         </div>
     </div>
