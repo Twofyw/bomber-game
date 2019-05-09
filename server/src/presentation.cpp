@@ -87,7 +87,7 @@ vector<uint8_t> PresentationLayer::pack_Invit(Message_To_Pre message){
     string str;
 
     // descriptor
-    temp.push_back((uint8_t)PacketType::InvitResponse);
+    temp.push_back((uint8_t)message.type_);
 
     //push_back user name length
     length = (uint16_t)(message.user_name_a_.length() );
