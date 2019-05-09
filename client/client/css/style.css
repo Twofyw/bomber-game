@@ -342,19 +342,33 @@ body {
     margin-left: 5%;
 }
 
+/*.boards {*/
+/*    margin*/
+/*}*/
 
 /* The heart of the matter */
-.botton-grid.btn-group.btn-matrix > div > div > button {
-    width: 35px;
-    padding: 9px;
+.btn-matrix button {
+    width: 24px;
+    height: 24px;
+    padding: 4px;
 }
 
-.botton-grid.btn-group.btn-matrix {
-    text-align: center;
-    /*     margin: auto; */
-    margin: 0;
-    /*   position: absolute; */
-    top: 50%;
-    -ms-transform: translateY(-50%);
-    transform: translateY(-50%);
+.align-right {
+    padding-bottom: 20px;
+    padding-left: 450px;
 }
+.double-cord {
+    padding-top: 20px;
+}
+
+.boards {
+    text-align: center;
+    top: 0%;
+    transform: translateY(5%);
+}
+
+.boards > .our-board {
+    text-align: center;
+    transform: translateY(0%);
+}
+
