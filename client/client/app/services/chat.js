@@ -374,6 +374,35 @@ angular
           setTimeout(tryReconnect, 1000);
         };
 
+        // ZZY
+        // ChatService.prototype.socketClose = function socketClose() {
+        //   // if state is kicked off, pop up a dialog and destroy socket
+        //   // if (!alertPoped) {
+        //   //   smalltalk.alert('警告', '服务器端不在线，请联系服务器管理员');
+        //   //   alertPoped = true;
+        //   // }
+        //   // globalSocket.destroy();
+        //   // console.log(globalSelf);
+        //
+        //   smalltalk.alert('警告', '服务器端不在线，请联系服务器管理员，点击OK重连').then(
+        //       () => {
+        //         globalSelf.cache.connected = false;
+        //         wasConnected = true;
+        //
+        //         function tryReconnect() {
+        //           console.log('socketClose', globalSocket);
+        //           console.log('Trying to reconnect...');
+        //           globalSelf.connect();
+        //           // if (!globalSelf.connected()) {
+        //           //setTimeout(tryReconnect, 1000);
+        //           // }
+        //         }
+        //         // otherwise reconnect
+        //         setTimeout(tryReconnect, 500);
+        //       }
+        //   );
+        // };
+
         var receiveBuffer = Buffer.allocUnsafe(0);
         var decodePacket = ChatService.prototype.decodePacket;
         ChatService.prototype.socketDataCallback = function socketDataCallback(data) {
