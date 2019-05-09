@@ -167,7 +167,7 @@ angular
         var clickedInviteButton = false;
         var personInvited;
         var notResponsingInvitation = true;
-        var rivalName = "";
+        // var rivalName = "";
 
         var ChatService = function (socket, settings) {
 
@@ -213,8 +213,7 @@ angular
 
           };
 
-          ChatService.prototype.opponentName = 'Twofyw';
-          ChatService.prototype.myName = 'Novate';
+          ChatService.prototype.opponentName = " ";
           ChatService.prototype.isOurMove = true;
           ChatService.prototype.isDoubleCord = false;
 
@@ -329,6 +328,7 @@ angular
             smalltalk.alert("警告", "您正在游戏的过程中，此时不可以发送邀请请求");
           } else {
             console.log("send request to: ", user);
+            globalSelf.opponentName = user;
             let rawData = {
               packetType: PacketType.SendInvit,
               payload: user
@@ -862,7 +862,7 @@ angular
                     // error
                     smalltalk.alert('警告', '用户名不存在');
                     console.log('Wrong username');
-                    // globalSelf.killConnection();
+                    () => {globalSelf.killConnection();}
                     break;
                   case ResponseType.OK:
                     // send password packet
@@ -898,7 +898,7 @@ angular
                   case ResponseType.ErrorOccurs:
                     // error
                     console.log('Wrong password packet type');
-                    // globalSelf.killConnection();
+                    () => {globalSelf.killConnection();}
                     break;
                   case ResponseType.ChangePassword:
                     // popup reset password prompt
@@ -936,7 +936,7 @@ angular
 
             case SessionState.UserSync:
               if (rawData.packetType != PacketType.Configuration) {
-                // // globalSelf.killConnection();
+                // () => {globalSelf.killConnection();}
                 console.log('wrong packet', rawData);
               } else {
                 // change configuration storage
@@ -1099,6 +1099,7 @@ angular
                 smalltalk.alert('警告', '您输了！').then(
                     function () {
                       sessionState == SessionState.ClientWaiting;
+                      globalSelf.opponentName = " ";
                     }
                 );
               }
@@ -1120,6 +1121,7 @@ angular
               console.log('Howdy! This is temporarily the end!');
               console.log('hasValidUser: ', Chat.hasValidUser);
               console.log('validOnline: ', globalSelf.validOnline());
+              console.log('globalSelf.opponentName', globalSelf.opponentName);
               console.log('user: ', globalSelf.user());
               smalltalk.alert('警告', '目前暂时在这里告一段落，再见！');
               break;
@@ -1166,9 +1168,7 @@ angular
                     // error occurs
                     console.log('Wrong username: ErrorOccurs');
                     smalltalk.alert('警告', '出现其他用户名错误').then(
-                        function() {
-                          // globalSelf.killConnection();
-                        }
+                      () => {globalSelf.killConnection();}
                     );
                     break;
                   case ResponseType.OK:
@@ -1187,9 +1187,7 @@ angular
                   default:
                     console.log('unknown ResponseType');
                     smalltalk.alert('警告', '服务器端info_response包错误，rawData.ResponseType: ', infoData).then(
-                        function() {
-                          // globalSelf.killConnection();
-                        }
+                      () => {globalSelf.killConnection();}
                     );
                     break;
                 }
@@ -1210,7 +1208,7 @@ angular
                   case ResponseType.ErrorOccurs:
                     // error
                     console.log('Wrong password packet type');
-                    // globalSelf.killConnection();
+                    () => {globalSelf.killConnection();}
                     break;
                   case ResponseType.Wrong:
                     // display message on label
@@ -1236,8 +1234,8 @@ angular
                   default:
                     console.log('unknown ResponseType');
                     smalltalk.alert('警告', '服务器端passwd_response包错误，rawData.ResponseType: ', infoData).then(
-                        function() {
-                          // globalSelf.killConnection();
+                        () => {
+                          globalSelf.killConnection();
                         }
                     );
                     break;
@@ -1267,9 +1265,7 @@ angular
                   default:
                     console.log('sync pack unknown');
                     smalltalk.alert('警告', '未知packet类型').then(
-                        function () {
-                          // globalSelf.killConnection();
-                        }
+                      () => {globalSelf.killConnection();}
                     );
                     break;
                 }
@@ -1281,7 +1277,6 @@ angular
               // 2. a "RecvInvit" packet has been received.
               // TODO: Must wait after invitation button has been pressed.
               // TODO: This means that when click invitation button, changeState() should be triggered.
-              rivalName = "";
               if (isSend) {
                 // Invite others
                 // Here the invitation button has been clicked.
@@ -1293,6 +1288,7 @@ angular
               else {
                 // Being invited
                 // Here nothing has been done by user, this state is triggered because a packet has been received.
+                globalSelf.opponentName = " ";
                 console.log('being invited');
                 sessionState = SessionState.ClientInvited;
                 changeState(rawData);
@@ -1309,7 +1305,7 @@ angular
                     .then(() => {
                       // invitation accepted
                       console.log('Accepted invitation from ' + inviter);
-                      rivalName = inviter;
+                      globalSelf.opponentName = inviter;
                       const buf = Buffer.allocUnsafe(1);
                       buf.writeUInt8(ResponseType.OK, 0);
                       let packet = constructPacket({
