@@ -1,7 +1,6 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
-//#include  "boost/lexical_cast.hpp" 
 #include  <unistd.h>
 #include  <iomanip>
 #include  <iostream>
@@ -9,14 +8,6 @@
 #include  <vector>
 #include  <string>
 using namespace std;
-
-// #define DatabaseName "Simple_chat_room"
-// #define DatabaseUserId "cyanic"
-// #define DatabasePassword "1985727yyhstc"
-
-
-// const string kDatabaseName = "Simple_chat_room";
-
 
 // use singleton design
 // example: https://sourcemaking.com/design_patterns/singleton/cpp/1

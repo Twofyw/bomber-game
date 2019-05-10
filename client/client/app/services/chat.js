@@ -296,6 +296,8 @@ angular
           // globalSelf.autoconnect();
 
           // ZZY
+          // game.testSth("omg");
+          // globalSelf.Game.prototype.testSth("omg");
           globalSelf.changeState();
         };
 
@@ -1125,17 +1127,24 @@ angular
             else if (rawData.packetType == PacketType.GameOver) {
               if (sessionState == SessionState.ClientWaiting || sessionState == SessionState.ClientInvited || sessionState == SessionState.ClientInviting || sessionState == SessionState.InGame) {
                 console.log('game over, you lose');
-                smalltalk.alert('警告', '您输了！').then(
-                    function () {
-                      sessionState == SessionState.ClientWaiting;
+                smalltalk
+                    .confirm('警告', '您输了！再来一局？')
+                    .then(() => {
+                      console.log('another game');
+                      sessionState = SessionState.ClientWaiting;
                       globalSelf.opponentName = " ";
-                    }
-                );
+                    })
+                    .catch(() => {
+                      console.log('exit');
+                      globalSelf.killConnection();
+                    });
               }
               else {
                 console.log('rawData.packetType: '+ rawData.packetType);
                 smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType + ', sessionState: ' + sessionState).then(
-                    // globalSelf.killConnection()
+                    () => {
+                      globalSelf.killConnection();
+                    }
                 );
               }
               return;
@@ -1412,8 +1421,34 @@ angular
               // All two players successfully paired.
               // Now draw planes and play games.
 
-              sessionState = SessionState.GreatWall;
-              changeState();
+              if(!rawData) {
+                // not get any packet
+                // draw planes
+                smalltalk.alert('通知', '请为对方画三架飞机');
+                sessionState = SessionState.InGame;
+              } else {
+                // get packet from server
+                switch (rawData.packetType) {
+                  case PacketType.Board:
+                    // received opponent's three planes.
+                    console.log('received opponent\'s three planes');
+                    globalSelf.Game.prototype.recvOpponentBoard(rawData.payload);
+                    break;
+                  case PacketType.SingleCoord:
+                    // received a single coordinate.
+                    console.log('get single coord');
+                    break;
+                  case PacketType.DoubleCoord:
+                    // received two coordinates.
+                    console.log('get double coord');
+                    break;
+                  default:
+                    break;
+                }
+              }
+
+              //sessionState = SessionState.GreatWall;
+              //changeState();
               break;
               /*
               case SessionState.ClientWaiting:

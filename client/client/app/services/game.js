@@ -26,7 +26,7 @@ const Color = Object.freeze({
     "notKnown": 9,
 });
 
-let Game = function () {
+let Game = function (sendPacket, PacketType) {
     console.log('Game init');
     // initialize to -1, -1
     Game.prototype.head = [-1, -1];
@@ -35,6 +35,8 @@ let Game = function () {
     Game.prototype.state = GameState.First;
     Game.prototype.isMyTurn = false;
     Game.prototype.boardString = "";
+    Game.prototype.sendPacket = sendPacket;
+    Game.prototype.PacketType = PacketType;
 
     // init
     Game.prototype.gameMap = [];
@@ -81,7 +83,7 @@ var Click = function (x, y, isDouble) {
                     this.planeMap[x][y] = this.state * 10 + Color.planeHead;
                 } else {
                     this.tail = [x, y];
-                    if (this.AddOnePlane(this.head, this.tail) == false) {
+                    if (this.AddOnePlane(this.planeMap, this.head, this.tail) == false) {
                         console.log("Add Plane failed");
                         // this.planeMap[x][y] = Color.notKnown;
                         this.planeMap[this.head[0]][this.head[1]] = Color.notKnown;
@@ -103,7 +105,7 @@ var Click = function (x, y, isDouble) {
                     this.planeMap[x][y] = this.state * 10 + Color.planeHead;
                 } else {
                     this.tail = [x, y];
-                    if (this.AddOnePlane(this.head, this.tail) == false) {
+                    if (this.AddOnePlane(this.planeMap, this.head, this.tail) == false) {
                         console.log("Add Plane failed");
                         this.planeMap[this.head[0]][this.head[1]] = Color.notKnown;
                         // this.planeMap[x][y] = Color.notKnown;
@@ -120,11 +122,12 @@ var Click = function (x, y, isDouble) {
                         this.head = [-1, -1];
                         // TODO: Send Board Packet
                         let boardPacket = {
-                            packetType: PacketType.Board,
+                            packetType: this.PacketType.Board,
                             payload: this.boardString
                         };
                         console.log("boardPacket", boardPacket);
-                        // SendPacket(boardPacket);
+                        console.log("Function", this.sendPacket);
+                        this.sendPacket(boardPacket);
                     }
                 }
                 break;
@@ -201,7 +204,7 @@ var Click = function (x, y, isDouble) {
     }
 }
 
-var AddOnePlane = function (head, tail) {
+var AddOnePlane = function (changeMap, head, tail) {
     let x = head[0];
     let y = head[1];
     // c: the direction of the plane
@@ -211,7 +214,7 @@ var AddOnePlane = function (head, tail) {
     var resultMap = new Array(10);
     for(let i = 0; i < 10; i++) {
         resultMap[i] = new Array(10);
-        for(let j = 0; j < 10; j++) resultMap[i][j] = this.planeMap[i][j];
+        for(let j = 0; j < 10; j++) resultMap[i][j] = changeMap[i][j];
     }
 
     console.log("resultMap",resultMap);
@@ -346,7 +349,7 @@ var AddOnePlane = function (head, tail) {
         }
     }
 
-    this.planeMap = resultMap;
+    changeMap = resultMap;
     return true;
 }
 
@@ -412,12 +415,35 @@ var coordinatePacket = function (payload, isDouble) {
     }
 }
 
+var recvOpponentBoard = function (payload) {
+    var BoardStr = payload;
+    for(let i = 0; i < BoardStr.length; i += 4){
+        var head = [Number(BoardStr[i]), Number(BoardStr[i+1])];
+        var tail = [Number(BoardStr[i+2]), Number(BoardStr[i+3])];
+
+        if (this.AddOnePlane(this.opponentMap, head, tail) == false) {
+            console.log("recv opponentBoard: Add Plane failed");
+            return false;
+        }
+    }
+    console.log("Write opponentBoard succeed.");
+    console.log("opponentMap: ", this.opponentMap);
+}
+
+var testSth = function (sth) {
+    //smalltalk.alert('通知', '传来了' + sth);
+    console.log('get: ', sth);
+};
+
 // Game();
 // Game.prototype
+Game.prototype.testSth =  testSth;
 Game.prototype.AddOnePlane = AddOnePlane;
 Game.prototype.Click = Click;
 Game.prototype.WinCheck = WinCheck;
 Game.prototype.coordinatePacket = coordinatePacket;
+Game.prototype.recvOpponentBoard = recvOpponentBoard;
+// Game.prototype.Chat = Chat;
 
 console.log(Game.prototype.isMyTurn);
 console.log(Game.prototype.planeMap);
