@@ -12,21 +12,36 @@
 <!--    <div class="xp-cellContainer">-->
 <!--  </div>-->
 <!-- ng-init="isMe = (user.id === $Chat.user().id)"-->
-  <menu class="list-friends pt-3">
-    <li ng-repeat="user in $Chat.onlineUserList">
-<!--      <img width="50" height="50" ng-src="{{ user.image }}">-->
-      <div class="info">
-        <div class="user" ng-bind="user">{{user}}</div>
-        <div class="status on" ng-cloak>
-<!--          {{ $Chat.isTyping(user) ? 'typing...' : 'online' }}-->
-          <a class="status inactive" href="javascript:void(0);" ng-click="$Chat.sendRequest(user)">Send request...</a>
-        </div>
-      </div>
-    </li>
-  </menu>
+    <menu class="list-friends pt-3" height="auto">
+        <li ng-repeat="user in $Chat.onlineUserList">
+            <!--      <img width="50" height="50" ng-src="{{ user.image }}">-->
+            <div class="info">
+                <div class="user" ng-bind="user">{{user}}</div>
+                <div class="status on" ng-cloak>
+                    <!--          {{ $Chat.isTyping(user) ? 'typing...' : 'online' }}-->
+                    <a class="status inactive" href="javascript:void(0);" ng-click="$Chat.sendRequest(user)">Send request...</a>
+                </div>
+            </div>
+        </li>
+    </menu>
+    <footer class="footer text-center">
+<!--        login status-->
+        <span ng-bind="$Chat.validOnline() ? '已登录' : '未登录'"
+              ng-class="'badge badge-pill ' + ($Chat.validOnline() ? 'badge-primary' : 'badge-dark')"> </span>
+<!--        connection status-->
+        <span ng-bind="$Chat.connected() ? '已连接' : '未连接'"
+              ng-class="'badge badge-pill ' + ($Chat.connected() ? 'badge-primary' : 'badge-dark')"></span><br>
+<!--        is my turn-->
+        <span ng-bind="$Chat.Game.prototype.isMyTurn ? 'is my turn' : 'not my turn'"
+              ng-class="'badge badge-pill ' + ($Chat.Game.prototype.isMyTurn ? 'badge-success' : 'badge-danger')"></span><br>
+        <button ng-style="$Chat.doubleCordBtnStyle($Chat.isDoubleCord)"
+                ng-click="$Chat.doubleCordBtnClick()"
+                class="btn btn-primary pt-3">{{$Chat.doubleCordBtnModel($Chat.isDoubleCord)}}</button>
+    </footer>
 </div>
 <!--class="row" --><!--class="col-md" -->
 <div class="chat text-center">
+    <span>{{$Chat.hasValidUser}}</span>
     <div class="boards">
         <div class="oppo-background">
             <div class="align-right text-left">
@@ -36,7 +51,10 @@
                 <div ng-repeat="colLabel in $Chat.colLabels">
                     <div ng-repeat="rowLabel in $Chat.rowLabels">
 <!--                        <button class="badge btn-primary" ng-style="$Chat.mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.mapToColor($Chat.gameMap[rowLabel][colLabel]))"> </button>-->
-                        <button class="badge btn-primary" ng-style="$Chat.mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.Game.prototype.Click(rowLabel, colLabel, $Chat.isDoubleCord)"> </button>
+                        <button class="badge btn-primary"
+                                ng-style="$Chat.mapToColor($Chat.Game.prototype.planeMap[rowLabel][colLabel])"
+                                ng-disabled="$Chat.Game.prototype.planeMap[rowLabel][colLabel] % 10 != 9 || $Chat.Game.prototype.state > 3"
+                                ng-click="$Chat.Game.prototype.Click(rowLabel, colLabel, $Chat.isDoubleCord)"> </button>
                     </div>
                 </div>
             </div>
@@ -52,16 +70,15 @@
         <div class="their-board btn-group btn-matrix">
             <div ng-repeat="colLabel in $Chat.colLabels">
                 <div ng-repeat="rowLabel in $Chat.rowLabels">
-                    <button class="badge btn-primary" ng-style="$Chat.mapToColor($Chat.Game.prototype.gameMap[rowLabel][colLabel])" ng-click="$Chat.Game.prototype.Click(rowLabel, colLabel, $Chat.isDoubleCord)"> </button>
+                    <button class="badge btn-primary"
+                            ng-style="$Chat.mapToColor($Chat.Game.prototype.gameMap[rowLabel][colLabel])"
+                            ng-click="$Chat.Game.prototype.Click(rowLabel, colLabel, $Chat.isDoubleCord)"
+                            ng-disabled="$Chat.Game.prototype.gameMap[rowLabel][colLabel] % 10 != 9 || !$Chat.Game.prototype.isMyTurn"
+                    > </button>
                 </div>
             </div>
         </div>
-        <br>
-        <div class="text-left align-right double-cord">
-            <button ng-style="$Chat.doubleCordBtnStyle($Chat.isDoubleCord)"
-                    ng-click="$Chat.doubleCordBtnClick()"
-                    class="btn btn-primary">{{$Chat.doubleCordBtnModel($Chat.isDoubleCord)}}</button>
-        </div>
+<!--        <br>-->
     </div>
 
     <!--  <div class="top">-->

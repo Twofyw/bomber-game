@@ -209,10 +209,7 @@ angular
             [0,0,0,0,0,0,0,0,0,0]
           ];
 
-          ChatService.prototype.switchDoubleCord = function () {
-
-          };
-
+          // UI methods
           ChatService.prototype.opponentName = 'Twofyw';
           ChatService.prototype.myName = 'Novate';
           ChatService.prototype.isOurMove = true;
@@ -231,6 +228,9 @@ angular
           ChatService.prototype.doubleCordBtnModel = function (isDoubleCord) {
             let messege = isDoubleCord ? '使用双坐标' : '使用单坐标';
             return messege;
+          }
+          ChatService.prototype.onlineBadgeModel = function (isDoubleCord) {
+
           }
 
 
