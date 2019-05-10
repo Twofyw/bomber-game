@@ -1411,6 +1411,7 @@ angular
             case SessionState.InGame:
               // All two players successfully paired.
               // Now draw planes and play games.
+
               sessionState = SessionState.GreatWall;
               changeState();
               break;

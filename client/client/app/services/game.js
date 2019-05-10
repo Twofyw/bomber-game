@@ -69,7 +69,6 @@ var Click = function (x, y, isDouble) {
     x = Number(x);
     y = Number(y);
     console.log('Game.Click', isDouble);
-    console.log(this.head);
 
     if (isDouble == false) {
         switch (this.state) {
@@ -79,50 +78,53 @@ var Click = function (x, y, isDouble) {
                     // need to store the head coordinate
                     console.log("Record Head");
                     this.head = [x, y];
-                    this.planeMap[x][y] = GameState.state * 10 + Color.planeHead;
+                    this.planeMap[x][y] = this.state * 10 + Color.planeHead;
                 } else {
                     this.tail = [x, y];
                     if (this.AddOnePlane(this.head, this.tail) == false) {
                         console.log("Add Plane failed");
+                        // this.planeMap[x][y] = Color.notKnown;
+                        this.planeMap[this.head[0]][this.head[1]] = Color.notKnown;
                         this.head = [-1, -1];
-                        this.planeMap[x][y] = Color.notKnown;
                         return;
                     } else {
                         console.log("Successfully Add Plane!");
                         this.state += 1;
-                        this.head = [-1, -1];
                         this.boardString += this.head[0].toString() + this.head[1].toString() + this.tail[0].toString() + this.tail[1].toString();
+                        this.head = [-1, -1];
                     }
                 }
                 break;
             }
             case GameState.Third: {
-                if (this.head == [-1, -1]) {
+                if (isCoordEqual(this.head, [-1, -1])) {
                     // need to store the head coordinate
                     this.head = [x, y];
-                    this.planeMap[x][y] = GameState.state * 10 + Color.planeHead;
+                    this.planeMap[x][y] = this.state * 10 + Color.planeHead;
                 } else {
                     this.tail = [x, y];
-                    if (this.AddOnePlane(head, tail) == false) {
+                    if (this.AddOnePlane(this.head, this.tail) == false) {
                         console.log("Add Plane failed");
+                        this.planeMap[this.head[0]][this.head[1]] = Color.notKnown;
+                        // this.planeMap[x][y] = Color.notKnown;
                         this.head = [-1, -1];
-                        this.planeMap[x][y] = Color.notKnown;
                         return;
                     } else {
                         console.log("Successfully Add Plane!");
-                        this.head = [-1, -1];
                         if (this.isMyTurn == true) {
                             this.state = GameState.Move;
                         } else {
                             this.state = GameState.Wait;
                         }
                         this.boardString += this.head[0].toString() + this.head[1].toString() + this.tail[0].toString() + this.tail[1].toString();
+                        this.head = [-1, -1];
                         // TODO: Send Board Packet
                         let boardPacket = {
                             packetType: PacketType.Board,
                             payload: this.boardString
                         };
-                        SendPacket(boardPacket);
+                        console.log("boardPacket", boardPacket);
+                        // SendPacket(boardPacket);
                     }
                 }
                 break;
@@ -136,7 +138,8 @@ var Click = function (x, y, isDouble) {
                     packetType: PacketType.SingleCoord,
                     payload: x.toString() + y.toString()
                 }
-                SendPacket(singleCoordinatePacket);
+                // SendPacket(singleCoordinatePacket);
+                console.log("SingleCoordinatePacket", singleCoordinatePacket);
 
                 if (this.WinCheck() == true) {
                     // TODO
@@ -144,7 +147,8 @@ var Click = function (x, y, isDouble) {
                         packetType: PacketType.GameOver,
                         payload: ""
                     };
-                    SendPacket(gameOverPacket);
+                    // SendPacket(gameOverPacket);
+                    console.log("GameOver", gameOverPacket);
                 }
             }
         }
@@ -175,7 +179,8 @@ var Click = function (x, y, isDouble) {
                         packetType: PacketType.DoubleCoord,
                         payload: this.head[0].toString() + this.head[1].toString() + this.tail[0].toString() + this.tail[1].toString()
                     }
-                    SendPacket(doubleCoordinatePacket);
+                    // SendPacket(doubleCoordinatePacket);
+                    console.log("doubleCoordinatePacket", doubleCoordinatePacket);
                 } else {
                     this.gameMap[x][y] = Color.notKnown;
                     this.gameMap[this.head[0]][this.gameMap[1]] = Color.notKnown;
@@ -188,7 +193,8 @@ var Click = function (x, y, isDouble) {
                         packetType: PacketType.GameOver,
                         payload: ""
                     };
-                    SendPacket(gameOverPacket);
+                    // SendPacket(gameOverPacket);
+                    console.log("GameOver2", gameOverPacket);
                 }
             }
         }
@@ -202,30 +208,46 @@ var AddOnePlane = function (head, tail) {
     // 0: upward, 1 right, 2 downward, 3 left
     let c = PlaneDirection.upward;
     // temp map
-    let resultMap = this.planeMap;
+    var resultMap = new Array(10);
+    for(let i = 0; i < 10; i++) {
+        resultMap[i] = new Array(10);
+        for(let j = 0; j < 10; j++) resultMap[i][j] = this.planeMap[i][j];
+    }
 
-    if (head[0] == tail[0] && head[1] < tail[1]) c = PlaneDirection.left;
-    else if (head[0] == tail[0] && head[1] > tail[1]) c = PlaneDirection.right;
-    else if (head[1] == tail[1] && head[0] < tail[0]) c = PlaneDirection.upward;
-    else c = PlaneDirection.downward;
+    console.log("resultMap",resultMap);
+    // console.log(head, tail);
+
+    if (head[0] == tail[0] && (tail[1] - head[1]) == 3) c = PlaneDirection.left;
+    else if (head[0] == tail[0] && (head[1] - tail[1]) == 3) c = PlaneDirection.right;
+    else if (head[1] == tail[1] && (tail[0] - head[0]) == 3) c = PlaneDirection.upward;
+    else if (head[1] == tail[1] && (head[0] - tail[0]) == 3) c = PlaneDirection.downward;
+    else return false;
 
     switch (c) {
         case PlaneDirection.upward: {
             for (let i = x, ci = 0; i < x + 4; i++) {
                 if (i < 0 || i > 9) {
-                    console.log('Plane Placed Error');
+                    console.log('Plane Placed Error UP');
                     // reset head record
-                    this.head = [-1, -1];
                     return false;
                 }
                 let cj = 0;
                 for (let j = y - 2; j < y + 3; j++) {
-                    if (j < 0 || j > 9 || this.planeShape[ci][cj] * resultMap[i][j]) {
-                        console.log('Plane Placed Error');
-                        this.head = [-1, -1];
+                    if (j < 0 || j > 9) {
+                        console.log('Plane Placed Error UP 2');
                         return false;
                     }
-                    resultMap[i][j] += this.planeShape[ci][cj] + this.state * 10;
+                    if(this.planeShape[ci][cj] != 0) {
+                        if(resultMap[i][j] == Color.notKnown) ;
+                        else if(i == x && j == y) ;
+                        else {
+                            console.log('Plane Placed Error UP 2');
+                            return false;
+                        }
+                    }
+
+                    if(this.planeShape[ci][cj] == 0) ;
+                    else resultMap[i][j] = this.planeShape[ci][cj] + this.state * 10;
                     cj++;
                 }
                 ci++;
@@ -235,19 +257,27 @@ var AddOnePlane = function (head, tail) {
         case PlaneDirection.right: {
             for (let i = x - 2, ci = 0; i < x + 3; i++) {
                 if (i < 0 || i > 9) {
-                    console.log('Plane Placed Error');
+                    console.log('Plane Placed Error Right');
                     // reset head record
-                    this.head = [-1, -1];
                     return false;
                 }
                 let cj = 0;
                 for (let j = y; j > y - 4; j--) {
-                    if (j < 0 || j > 9 || this.planeShape[cj][ci] * resultMap[i][j]) {
-                        console.log('Plane Placed Error');
-                        this.head = [-1, -1];
+                    if (j < 0 || j > 9) {
+                        console.log('Plane Placed Error Right 2');
                         return false;
                     }
-                    resultMap[i][j] += this.planeShape[cj][ci] + this.state * 10;
+                    if(this.planeShape[cj][ci] != 0) {
+                        if(resultMap[i][j] == Color.notKnown) ;
+                        else if(i == x && j == y) ;
+                        else {
+                            console.log('Plane Placed Error Right 2');
+                            return false;
+                        }
+                    }
+
+                    if(this.planeShape[cj][ci] == 0);
+                    else resultMap[i][j] = this.planeShape[cj][ci] + this.state * 10;
                     cj++;
                 }
                 ci++;
@@ -257,19 +287,27 @@ var AddOnePlane = function (head, tail) {
         case PlaneDirection.downward: {
             for (let i = x, ci = 0; i > x - 4; i--) {
                 if (i < 0 || i > 9) {
-                    console.log('Plane Placed Error');
+                    console.log('Plane Placed Error Down');
                     // reset head record
-                    this.head = [-1, -1];
                     return false;
                 }
                 let cj = 0;
-                for (let j = y - 2; j < y + 3; j++) {
-                    if (j < 0 || j > 9 || this.planeShape[ci][cj] * resultMap[i][j]) {
-                        console.log('Plane Placed Error');
-                        this.head = [-1, -1];
+                for (let j = y + 2; j > y - 3; j--) {
+                    if (j < 0 || j > 9) {
+                        console.log('Plane Placed Error Down 2');
                         return false;
                     }
-                    resultMap[i][j] += this.planeShape[ci][cj] + this.state * 10;
+                    if(this.planeShape[ci][cj] != 0) {
+                        if(resultMap[i][j] == Color.notKnown) ;
+                        else if(i == x && j == y) ;
+                        else {
+                            console.log('Plane Placed Error Down 2');
+                            return false;
+                        }
+                    }
+
+                    if(this.planeShape[ci][cj] == 0);
+                    else resultMap[i][j] = this.planeShape[ci][cj] + this.state * 10;
                     cj++;
                 }
                 ci++;
@@ -279,19 +317,27 @@ var AddOnePlane = function (head, tail) {
         case PlaneDirection.left: {
             for (let i = x - 2, ci = 0; i < x + 3; i++) {
                 if (i < 0 || i > 9) {
-                    console.log('Plane Placed Error');
+                    console.log('Plane Placed Error Left');
                     // reset head record
-                    this.head = [-1, -1];
                     return false;
                 }
                 let cj = 0;
                 for (let j = y; j < y + 4; j++) {
-                    if (j < 0 || j > 9 || this.planeShape[cj][ci] * resultMap[i][j]) {
-                        console.log('Plane Placed Error');
-                        this.head = [-1, -1];
+                    if (j < 0 || j > 9) {
+                        console.log('Plane Placed Error Left 2');
                         return false;
                     }
-                    resultMap[i][j] = this.planeShape[cj][ci] + this.state * 10;
+                    if(this.planeShape[cj][ci] != 0) {
+                        if(resultMap[i][j] == Color.notKnown) ;
+                        else if(i == x && j == y) ;
+                        else {
+                            console.log('Plane Placed Error Left 3');
+                            return false;
+                        }
+                    }
+
+                    if(this.planeShape[cj][ci] == 0);
+                    else resultMap[i][j] = this.planeShape[cj][ci] + this.state * 10;
                     cj++;
                 }
                 ci++;
