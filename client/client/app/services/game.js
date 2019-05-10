@@ -83,7 +83,7 @@ var Click = function (x, y, isDouble) {
                     this.planeMap[x][y] = this.state * 10 + Color.planeHead;
                 } else {
                     this.tail = [x, y];
-                    if (this.AddOnePlane(this.planeMap, this.head, this.tail) == false) {
+                    if (this.AddOnePlane(false, this.head, this.tail) == false) {
                         console.log("Add Plane failed");
                         // this.planeMap[x][y] = Color.notKnown;
                         this.planeMap[this.head[0]][this.head[1]] = Color.notKnown;
@@ -105,7 +105,7 @@ var Click = function (x, y, isDouble) {
                     this.planeMap[x][y] = this.state * 10 + Color.planeHead;
                 } else {
                     this.tail = [x, y];
-                    if (this.AddOnePlane(this.planeMap, this.head, this.tail) == false) {
+                    if (this.AddOnePlane(false, this.head, this.tail) == false) {
                         console.log("Add Plane failed");
                         this.planeMap[this.head[0]][this.head[1]] = Color.notKnown;
                         // this.planeMap[x][y] = Color.notKnown;
@@ -204,13 +204,17 @@ var Click = function (x, y, isDouble) {
     }
 }
 
-var AddOnePlane = function (changeMap, head, tail) {
+var AddOnePlane = function (isOpponent, head, tail) {
     let x = head[0];
     let y = head[1];
     // c: the direction of the plane
     // 0: upward, 1 right, 2 downward, 3 left
     let c = PlaneDirection.upward;
     // temp map
+    var changeMap;
+    if(isOpponent == false) changeMap = this.planeMap;
+    else changeMap = this.opponentMap;
+
     var resultMap = new Array(10);
     for(let i = 0; i < 10; i++) {
         resultMap[i] = new Array(10);
@@ -349,7 +353,9 @@ var AddOnePlane = function (changeMap, head, tail) {
         }
     }
 
-    changeMap = resultMap;
+    if(isOpponent == false) this.planeMap = resultMap;
+    else this.opponentMap = resultMap;
+
     return true;
 }
 
@@ -421,7 +427,8 @@ var recvOpponentBoard = function (payload) {
         var head = [Number(BoardStr[i]), Number(BoardStr[i+1])];
         var tail = [Number(BoardStr[i+2]), Number(BoardStr[i+3])];
 
-        if (this.AddOnePlane(this.opponentMap, head, tail) == false) {
+        var changeMap = this.opponentMap;
+        if (this.AddOnePlane(true, head, tail) == false) {
             console.log("recv opponentBoard: Add Plane failed");
             return false;
         }
@@ -430,14 +437,8 @@ var recvOpponentBoard = function (payload) {
     console.log("opponentMap: ", this.opponentMap);
 }
 
-var testSth = function (sth) {
-    //smalltalk.alert('通知', '传来了' + sth);
-    console.log('get: ', sth);
-};
-
 // Game();
 // Game.prototype
-Game.prototype.testSth =  testSth;
 Game.prototype.AddOnePlane = AddOnePlane;
 Game.prototype.Click = Click;
 Game.prototype.WinCheck = WinCheck;

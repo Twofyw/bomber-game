@@ -32,7 +32,7 @@
         <span ng-bind="$Chat.connected() ? '已连接' : '未连接'"
               ng-class="'badge badge-pill ' + ($Chat.connected() ? 'badge-primary' : 'badge-dark')"></span><br>
 <!--        is my turn-->
-        <span ng-bind="$Chat.Game.prototype.isMyTurn ? 'is my turn' : 'not my turn'"
+        <span ng-bind="$Chat.Game.prototype.isMyTurn ? '本方下棋中' : '对方下棋中'"
               ng-class="'badge badge-pill ' + ($Chat.Game.prototype.isMyTurn ? 'badge-success' : 'badge-danger')"></span><br>
         <button ng-style="$Chat.doubleCordBtnStyle($Chat.isDoubleCord)"
                 ng-click="$Chat.doubleCordBtnClick()"
