@@ -1,18 +1,18 @@
 <div class="left-menu">
-<!--  <form action="#" class="search" ng-init="name = ''">-->
-<!--    <input placeholder="Search by name..." type="search" name="" id="" ng-model="name">-->
-<!--    <input type="submit" value="&#xf002;">-->
-<!--  </form>-->
-<!--    v-bind:style="{height: cellSize}" -->
-<!--    v-bind:style="{height: cellSize, width: cellSize, lineHeight: cellSize}" -->
-<!--     @click="placeCellTouched(i - 1, j - 1)"-->
-<!--     :id="'g-'+i+'-'+j"-->
+    <!--  <form action="#" class="search" ng-init="name = ''">-->
+    <!--    <input placeholder="Search by name..." type="search" name="" id="" ng-model="name">-->
+    <!--    <input type="submit" value="&#xf002;">-->
+    <!--  </form>-->
+    <!--    v-bind:style="{height: cellSize}" -->
+    <!--    v-bind:style="{height: cellSize, width: cellSize, lineHeight: cellSize}" -->
+    <!--     @click="placeCellTouched(i - 1, j - 1)"-->
+    <!--     :id="'g-'+i+'-'+j"-->
 
-<!--  <div class="xp-grid">-->
-<!--    <div class="xp-cellContainer">-->
-<!--  </div>-->
-<!-- ng-init="isMe = (user.id === $Chat.user().id)"-->
-    <menu class="list-friends pt-3" height="auto">
+    <!--  <div class="xp-grid">-->
+    <!--    <div class="xp-cellContainer">-->
+    <!--  </div>-->
+    <!-- ng-init="isMe = (user.id === $Chat.user().id)"-->
+    <menu class="list-friends pt-3">
         <li ng-repeat="user in $Chat.onlineUserList">
             <!--      <img width="50" height="50" ng-src="{{ user.image }}">-->
             <div class="info">
@@ -65,7 +65,7 @@
         </div>
 
         <div class="align-right text-left">
-            <h5>Guess now!<br><span class="badge badge-secondary">{{$Chat.myName}}</span></h5>
+            <h5>Guess now!<br><span class="badge badge-secondary">{{$Chat.user()}}</span></h5>
         </div>
         <div class="their-board btn-group btn-matrix">
             <div ng-repeat="colLabel in $Chat.colLabels">
@@ -82,30 +82,30 @@
     </div>
 
     <!--  <div class="top">-->
-<!--    <div class="avatar" style="float: right; padding-right: 12px">-->
-<!--      <img width="50" height="50" ng-src="{{ $Chat.user().image }}">-->
-<!--    </div>-->
-<!--    <div class="info" style="float: right; width: 250px; text-align: right; padding: 12px">-->
-<!--      <div class="name" ng-bind="$Chat.user().name"></div>-->
-<!--      <div class="count status on">online for {{ $moment($Chat.user().timestamp).fromNow(true) }}</div>-->
-<!--    </div>-->
-<!--  </div>-->
-<!--  <ul class="messages">-->
-<!--    <li ng-class="{'i': isMine, 'friend-with-a-SVAGina': !isMine}" ng-repeat="message in $Chat.messages()"-->
-<!--        ng-init="isMine = (message.username === $Chat.user())">-->
+    <!--    <div class="avatar" style="float: right; padding-right: 12px">-->
+    <!--      <img width="50" height="50" ng-src="{{ $Chat.user().image }}">-->
+    <!--    </div>-->
+    <!--    <div class="info" style="float: right; width: 250px; text-align: right; padding: 12px">-->
+    <!--      <div class="name" ng-bind="$Chat.user().name"></div>-->
+    <!--      <div class="count status on">online for {{ $moment($Chat.user().timestamp).fromNow(true) }}</div>-->
+    <!--    </div>-->
+    <!--  </div>-->
+    <!--  <ul class="messages">-->
+    <!--    <li ng-class="{'i': isMine, 'friend-with-a-SVAGina': !isMine}" ng-repeat="message in $Chat.messages()"-->
+    <!--        ng-init="isMine = (message.username === $Chat.user())">-->
 
-<!--      <div class="head">-->
-<!--        <span class="name" ng-bind="message.username"></span>-->
-<!--        <span class="time" ng-bind="$moment(message.timestamp).fromNow()"></span>-->
-<!--      </div>-->
+    <!--      <div class="head">-->
+    <!--        <span class="name" ng-bind="message.username"></span>-->
+    <!--        <span class="time" ng-bind="$moment(message.timestamp).fromNow()"></span>-->
+    <!--      </div>-->
 
-<!--      <div class="message" ng-bind="message.body"></div>-->
+    <!--      <div class="message" ng-bind="message.body"></div>-->
 
-<!--    </li>-->
-<!--  </ul>-->
-<!--  <div class="write-form">-->
-<!--    <textarea placeholder="Type your message..." name="e" rows="2" ng-model="input.body" ng-change=""-->
-<!--              ng-keypress="keypress($event)"></textarea>-->
-<!--    <span class="send" ng-click="send(input)">Send</span>-->
-<!--  </div>-->
+    <!--    </li>-->
+    <!--  </ul>-->
+    <!--  <div class="write-form">-->
+    <!--    <textarea placeholder="Type your message..." name="e" rows="2" ng-model="input.body" ng-change=""-->
+    <!--              ng-keypress="keypress($event)"></textarea>-->
+    <!--    <span class="send" ng-click="send(input)">Send</span>-->
+    <!--  </div>-->
 </div>

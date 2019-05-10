@@ -167,7 +167,7 @@ angular
         var clickedInviteButton = false;
         var personInvited;
         var notResponsingInvitation = true;
-        var rivalName = "";
+        // var rivalName = "";
 
         var ChatService = function (socket, settings) {
 
@@ -209,9 +209,11 @@ angular
             [0,0,0,0,0,0,0,0,0,0]
           ];
 
-          // UI methods
-          ChatService.prototype.opponentName = 'Twofyw';
-          ChatService.prototype.myName = 'Novate';
+          ChatService.prototype.switchDoubleCord = function () {
+
+          };
+
+          ChatService.prototype.opponentName = " ";
           ChatService.prototype.isOurMove = true;
           ChatService.prototype.isDoubleCord = false;
 
@@ -297,6 +299,8 @@ angular
           // globalSelf.autoconnect();
 
           // ZZY
+          // game.testSth("omg");
+          // globalSelf.Game.prototype.testSth("omg");
           globalSelf.changeState();
         };
 
@@ -329,6 +333,7 @@ angular
             smalltalk.alert("警告", "您正在游戏的过程中，此时不可以发送邀请请求");
           } else {
             console.log("send request to: ", user);
+            globalSelf.opponentName = user;
             let rawData = {
               packetType: PacketType.SendInvit,
               payload: user
@@ -373,6 +378,35 @@ angular
           // otherwise reconnect
           setTimeout(tryReconnect, 1000);
         };
+
+        // ZZY
+        // ChatService.prototype.socketClose = function socketClose() {
+        //   // if state is kicked off, pop up a dialog and destroy socket
+        //   // if (!alertPoped) {
+        //   //   smalltalk.alert('警告', '服务器端不在线，请联系服务器管理员');
+        //   //   alertPoped = true;
+        //   // }
+        //   // globalSocket.destroy();
+        //   // console.log(globalSelf);
+        //
+        //   smalltalk.alert('警告', '服务器端不在线，请联系服务器管理员，点击OK重连').then(
+        //       () => {
+        //         globalSelf.cache.connected = false;
+        //         wasConnected = true;
+        //
+        //         function tryReconnect() {
+        //           console.log('socketClose', globalSocket);
+        //           console.log('Trying to reconnect...');
+        //           globalSelf.connect();
+        //           // if (!globalSelf.connected()) {
+        //           //setTimeout(tryReconnect, 1000);
+        //           // }
+        //         }
+        //         // otherwise reconnect
+        //         setTimeout(tryReconnect, 500);
+        //       }
+        //   );
+        // };
 
         var receiveBuffer = Buffer.allocUnsafe(0);
         var decodePacket = ChatService.prototype.decodePacket;
@@ -862,7 +896,7 @@ angular
                     // error
                     smalltalk.alert('警告', '用户名不存在');
                     console.log('Wrong username');
-                    // globalSelf.killConnection();
+                    () => {globalSelf.killConnection();}
                     break;
                   case ResponseType.OK:
                     // send password packet
@@ -898,7 +932,7 @@ angular
                   case ResponseType.ErrorOccurs:
                     // error
                     console.log('Wrong password packet type');
-                    // globalSelf.killConnection();
+                    () => {globalSelf.killConnection();}
                     break;
                   case ResponseType.ChangePassword:
                     // popup reset password prompt
@@ -936,7 +970,7 @@ angular
 
             case SessionState.UserSync:
               if (rawData.packetType != PacketType.Configuration) {
-                // // globalSelf.killConnection();
+                // () => {globalSelf.killConnection();}
                 console.log('wrong packet', rawData);
               } else {
                 // change configuration storage
@@ -1096,16 +1130,24 @@ angular
             else if (rawData.packetType == PacketType.GameOver) {
               if (sessionState == SessionState.ClientWaiting || sessionState == SessionState.ClientInvited || sessionState == SessionState.ClientInviting || sessionState == SessionState.InGame) {
                 console.log('game over, you lose');
-                smalltalk.alert('警告', '您输了！').then(
-                    function () {
-                      sessionState == SessionState.ClientWaiting;
-                    }
-                );
+                smalltalk
+                    .confirm('警告', '您输了！再来一局？')
+                    .then(() => {
+                      console.log('another game');
+                      sessionState = SessionState.ClientWaiting;
+                      globalSelf.opponentName = " ";
+                    })
+                    .catch(() => {
+                      console.log('exit');
+                      globalSelf.killConnection();
+                    });
               }
               else {
                 console.log('rawData.packetType: '+ rawData.packetType);
                 smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType + ', sessionState: ' + sessionState).then(
-                    // globalSelf.killConnection()
+                    () => {
+                      globalSelf.killConnection();
+                    }
                 );
               }
               return;
@@ -1120,6 +1162,7 @@ angular
               console.log('Howdy! This is temporarily the end!');
               console.log('hasValidUser: ', Chat.hasValidUser);
               console.log('validOnline: ', globalSelf.validOnline());
+              console.log('globalSelf.opponentName', globalSelf.opponentName);
               console.log('user: ', globalSelf.user());
               smalltalk.alert('警告', '目前暂时在这里告一段落，再见！');
               break;
@@ -1166,9 +1209,7 @@ angular
                     // error occurs
                     console.log('Wrong username: ErrorOccurs');
                     smalltalk.alert('警告', '出现其他用户名错误').then(
-                        function() {
-                          // globalSelf.killConnection();
-                        }
+                      () => {globalSelf.killConnection();}
                     );
                     break;
                   case ResponseType.OK:
@@ -1187,9 +1228,7 @@ angular
                   default:
                     console.log('unknown ResponseType');
                     smalltalk.alert('警告', '服务器端info_response包错误，rawData.ResponseType: ', infoData).then(
-                        function() {
-                          // globalSelf.killConnection();
-                        }
+                      () => {globalSelf.killConnection();}
                     );
                     break;
                 }
@@ -1210,7 +1249,7 @@ angular
                   case ResponseType.ErrorOccurs:
                     // error
                     console.log('Wrong password packet type');
-                    // globalSelf.killConnection();
+                    () => {globalSelf.killConnection();}
                     break;
                   case ResponseType.Wrong:
                     // display message on label
@@ -1236,8 +1275,8 @@ angular
                   default:
                     console.log('unknown ResponseType');
                     smalltalk.alert('警告', '服务器端passwd_response包错误，rawData.ResponseType: ', infoData).then(
-                        function() {
-                          // globalSelf.killConnection();
+                        () => {
+                          globalSelf.killConnection();
                         }
                     );
                     break;
@@ -1267,9 +1306,7 @@ angular
                   default:
                     console.log('sync pack unknown');
                     smalltalk.alert('警告', '未知packet类型').then(
-                        function () {
-                          // globalSelf.killConnection();
-                        }
+                      () => {globalSelf.killConnection();}
                     );
                     break;
                 }
@@ -1281,7 +1318,6 @@ angular
               // 2. a "RecvInvit" packet has been received.
               // TODO: Must wait after invitation button has been pressed.
               // TODO: This means that when click invitation button, changeState() should be triggered.
-              rivalName = "";
               if (isSend) {
                 // Invite others
                 // Here the invitation button has been clicked.
@@ -1293,6 +1329,7 @@ angular
               else {
                 // Being invited
                 // Here nothing has been done by user, this state is triggered because a packet has been received.
+                globalSelf.opponentName = " ";
                 console.log('being invited');
                 sessionState = SessionState.ClientInvited;
                 changeState(rawData);
@@ -1309,7 +1346,7 @@ angular
                     .then(() => {
                       // invitation accepted
                       console.log('Accepted invitation from ' + inviter);
-                      rivalName = inviter;
+                      globalSelf.opponentName = inviter;
                       const buf = Buffer.allocUnsafe(1);
                       buf.writeUInt8(ResponseType.OK, 0);
                       let packet = constructPacket({
@@ -1386,8 +1423,35 @@ angular
             case SessionState.InGame:
               // All two players successfully paired.
               // Now draw planes and play games.
-              sessionState = SessionState.GreatWall;
-              changeState();
+
+              if(!rawData) {
+                // not get any packet
+                // draw planes
+                smalltalk.alert('通知', '请为对方画三架飞机');
+                sessionState = SessionState.InGame;
+              } else {
+                // get packet from server
+                switch (rawData.packetType) {
+                  case PacketType.Board:
+                    // received opponent's three planes.
+                    console.log('received opponent\'s three planes');
+                    globalSelf.Game.prototype.recvOpponentBoard(rawData.payload);
+                    break;
+                  case PacketType.SingleCoord:
+                    // received a single coordinate.
+                    console.log('get single coord');
+                    break;
+                  case PacketType.DoubleCoord:
+                    // received two coordinates.
+                    console.log('get double coord');
+                    break;
+                  default:
+                    break;
+                }
+              }
+
+              //sessionState = SessionState.GreatWall;
+              //changeState();
               break;
               /*
               case SessionState.ClientWaiting:
