@@ -1,7 +1,7 @@
 const Game = require('./app/services/game');
-console.log('DEBUG Game', Game);
-let game = new Game();
-console.log('DEBUG game', game);
+// console.log('DEBUG Game', Game);
+// let game = new Game();
+// console.log('DEBUG game', game);
 
 // used as the first byte of data packets
 /*
@@ -158,7 +158,6 @@ angular
          * @constructor
          */
         var Chat = this;
-        var sessionState = SessionState.FirstThingsFirst;
         var globalSelf;
         var globalSocket;
         var wasConnected = false;
@@ -189,8 +188,17 @@ angular
             };
           };
 
-          ChatService.prototype.rowLabels = Array.apply(null, {length: 10}).map(Number.call, Number);
-          ChatService.prototype.colLabels = Array.apply(null, {length: 10}).map(Number.call, Number);
+          ChatService.prototype.sessionState = SessionState.FirstThingsFirst;
+          ChatService.prototype.refresh = function() {
+            console.log("refresh");
+            this.sessionState = SessionState.ClientWaiting;
+            this.opponentName = "Don\'t have one";
+            console.log(this.sessionState, " ", this.opponentName);
+            $rootScope.$apply();
+          };
+
+          ChatService.prototype.rowLabels = Array.apply(null, { length: 10 }).map(Number.call, Number);
+          ChatService.prototype.colLabels = Array.apply(null, { length: 10 }).map(Number.call, Number);
           // debug
           // ChatService.prototype.gameMap = [];
           // for(let i = 0; i < 10; i++) {
@@ -213,7 +221,7 @@ angular
 
           };
 
-          ChatService.prototype.opponentName = " ";
+          ChatService.prototype.opponentName = "Don\'t have one";
           ChatService.prototype.isOurMove = true;
           ChatService.prototype.isDoubleCord = false;
 
@@ -228,7 +236,7 @@ angular
             this.isDoubleCord = !this.isDoubleCord;
           }
           ChatService.prototype.doubleCordBtnModel = function (isDoubleCord) {
-            let messege = isDoubleCord ? '使用双坐标' : '使用单坐标';
+            let messege = (isDoubleCord && globalSelf.planeDrawn) ? 'Use double coordinate' : 'Use single coordinate';
             return messege;
           }
           ChatService.prototype.onlineBadgeModel = function (isDoubleCord) {
@@ -242,26 +250,48 @@ angular
             let location = planeCode % 10;
             let colorHex = '#b2bec3';
             switch (location) {
+                // miss hit
+              case 0:
+                colorHex = '#000000';
+                return {
+                  "background-color": colorHex,
+                  "border-color":  colorHex
+                };
                 // body
               case 1:
-              case 4:
                 colorHex = '#fdcb6e';
+                return {
+                  "background-color": colorHex,
+                  "border-color":  colorHex
+                };
+              case 4:
+                colorHex = '#FF7E00';
                 return {
                   "background-color": colorHex,
                   "border-color":  colorHex
                 };
                 // head
               case 2:
-              case 5:
                 colorHex = '#e17055';
+                return {
+                  "background-color": colorHex,
+                  "border-color":  colorHex
+                };
+              case 5:
+                colorHex = '#841B2D';
                 return {
                   "background-color": colorHex,
                   "border-color":  colorHex
                 };
                 // tail
               case 3:
+                colorHex = '#72A0C1';
+                return {
+                  "background-color": colorHex,
+                  "border-color":  colorHex
+                };
               case 6:
-                colorHex = '#fab1a0';
+                colorHex = '#2E5894';
                 return {
                   "background-color": colorHex,
                   "border-color":  colorHex
@@ -273,8 +303,15 @@ angular
                   "background-color": colorHex,
                   "border-color":  colorHex
                 };
+              case 8:
+                colorHex = '#d63031';
+                return {
+                  "background-color": colorHex,
+                  "border-color":  colorHex
+                };
                 //  default
-              case 0:
+
+              case 9:
               default:
                 return {
                   "background-color": colorHex,
@@ -325,12 +362,12 @@ angular
         // On click send request.
         ChatService.prototype.sendRequest = function (user) {
           // should only be clicked when client waiting.
-          if (sessionState == SessionState.ClientInviting) {
-            smalltalk.alert("警告", "您刚才邀请了别人，正在等待对方回复，此时不可以发送邀请请求");
-          } else if (sessionState == SessionState.ClientInvited) {
-            smalltalk.alert("警告", "您已被人邀请，此时不可以发送邀请请求");
-          } else if (sessionState == SessionState.InGame || sessionState == SessionState.GreatWall) {
-            smalltalk.alert("警告", "您正在游戏的过程中，此时不可以发送邀请请求");
+          if (ChatService.prototype.sessionState == SessionState.ClientInviting) {
+            smalltalk.alert("Warning", "You have already invited others, now waiting for response and unable to send another request.");
+          } else if (ChatService.prototype.sessionState == SessionState.ClientInvited) {
+            smalltalk.alert("Warning", "You have already been invited, you should response the invitation before you send another request.");
+          } else if (ChatService.prototype.sessionState == SessionState.InGame || ChatService.prototype.sessionState == SessionState.GreatWall) {
+            smalltalk.alert("Warning", "You are in the game, and unable to send request.");
           } else {
             console.log("send request to: ", user);
             globalSelf.opponentName = user;
@@ -338,6 +375,7 @@ angular
               packetType: PacketType.SendInvit,
               payload: user
             };
+            smalltalk.alert('Notice', 'Invitation sent to ' + user + ', please wait for response.');
             changeState(rawData, true);
           }
         };
@@ -356,57 +394,53 @@ angular
           }; // rawData
         };
 
-        ChatService.prototype.socketClose = function socketClose() {
-          // if state is kicked off, pop up a dialog and destroy socket
-          if (!alertPoped) {
-            smalltalk.alert('警告', '服务器端不在线，请联系服务器管理员');
-            alertPoped = true;
-          }
-          // globalSocket.destroy();
-          // console.log(globalSelf);
-          globalSelf.cache.connected = false;
-          wasConnected = true;
-
-          function tryReconnect() {
-            console.log('socketClose', globalSocket);
-            console.log('Trying to reconnect...');
-            globalSelf.connect();
-            // if (!globalSelf.connected()) {
-            //setTimeout(tryReconnect, 1000);
-            // }
-          }
-          // otherwise reconnect
-          setTimeout(tryReconnect, 1000);
-        };
-
-        // ZZY
         // ChatService.prototype.socketClose = function socketClose() {
         //   // if state is kicked off, pop up a dialog and destroy socket
-        //   // if (!alertPoped) {
-        //   //   smalltalk.alert('警告', '服务器端不在线，请联系服务器管理员');
-        //   //   alertPoped = true;
-        //   // }
+        //   if (!alertPoped) {
+        //     smalltalk.alert('Warning', 'Server offline, please contact the administrator of the server.');
+        //     alertPoped = true;
+        //   }
         //   // globalSocket.destroy();
         //   // console.log(globalSelf);
+        //   globalSelf.cache.connected = false;
+        //   wasConnected = true;
         //
-        //   smalltalk.alert('警告', '服务器端不在线，请联系服务器管理员，点击OK重连').then(
-        //       () => {
-        //         globalSelf.cache.connected = false;
-        //         wasConnected = true;
-        //
-        //         function tryReconnect() {
-        //           console.log('socketClose', globalSocket);
-        //           console.log('Trying to reconnect...');
-        //           globalSelf.connect();
-        //           // if (!globalSelf.connected()) {
-        //           //setTimeout(tryReconnect, 1000);
-        //           // }
-        //         }
-        //         // otherwise reconnect
-        //         setTimeout(tryReconnect, 500);
-        //       }
-        //   );
+        //   function tryReconnect() {
+        //     console.log('socketClose', globalSocket);
+        //     console.log('Trying to reconnect...');
+        //     ChatService.prototype.sessionState = SessionState.Init;
+        //     globalSelf.connect();
+        //     // if (!globalSelf.connected()) {
+        //     //setTimeout(tryReconnect, 1000);
+        //     // }
+        //   }
+        //   // otherwise reconnect
+        //   setTimeout(tryReconnect, 1000);
         // };
+
+        // ZZY
+        ChatService.prototype.socketClose = function socketClose() {
+
+          smalltalk.alert('Warning', 'Server offline, please contact the administrator of the server. Press OK to reconnect.').then(
+              () => {
+                globalSelf.cache.connected = false;
+                $rootScope.$apply();
+                wasConnected = true;
+
+                function tryReconnect() {
+                  console.log('socketClose', globalSocket);
+                  console.log('Trying to reconnect...');
+                  ChatService.prototype.sessionState = SessionState.Init;
+                  globalSelf.connect();
+                  // if (!globalSelf.connected()) {
+                  //setTimeout(tryReconnect, 1000);
+                  // }
+                }
+                // otherwise reconnect
+                setTimeout(tryReconnect, 500);
+              }
+          );
+        };
 
         var receiveBuffer = Buffer.allocUnsafe(0);
         var decodePacket = ChatService.prototype.decodePacket;
@@ -461,8 +495,6 @@ angular
             },
             timestamp: null,
             connected: false,
-            // ZZY
-            // validOnline: false
           };
           cache = this.cache;
 
@@ -490,10 +522,11 @@ angular
         };
 
         ChatService.prototype.validOnline = function () {
-          console.log('should be after response ok', this.settings.user(), Chat.hasValidUser, this.settings.user() && Chat.hasValidUser)
+          console.log(ChatService.prototype.sessionState)
           return this.settings.user() && Chat.hasValidUser;
-          //return this.settings.user() && this.cache.validOnline;
         };
+
+        ChatService.prototype.planeDrawn = false;
 
         /**
          * Gets the current user list in the room.
@@ -599,25 +632,26 @@ angular
           //if (!globalSelf.connected() && !self.user()) {
           if (!self.validOnline()) {
 
-            //smalltalk.prompt('登陆', '用户名：', process.env.USER || process.env.username || 'Larry Shen').then(function (value) {
-            smalltalk.prompt('登陆', '用户名：', 'Novate').then(function (value) {
+            smalltalk.prompt('Log in', 'Username:', 'Novate').then(function (value) {
               globalUsername = value;
               globalSelf.cache.user = {
                 name: value
               };
+              $rootScope.$apply();
               // prompt for password
-              smalltalk.prompt('登陆', '密码：', '', {
+              smalltalk.prompt('Log in', 'Password:', '', {
                 type: 'password'
               }).then(function (value) {
 
                 globalPassword = value;
+                $rootScope.$apply();
                 //globalSelf.connect();
                 //ZZY
                 if (!globalSelf.connected()) {
                   globalSelf.connect();
                 } else {
                   globalSelf.initiateLoginSequence();
-                }
+                };
 
 
               }, function () {
@@ -700,7 +734,7 @@ angular
             }, 100);
           } else {
             // warn the user it's not connected
-            smalltalk.alert('警告', '连接未建立');
+            smalltalk.alert('Warning', 'Connection not set.');
           }
         };
 
@@ -813,6 +847,7 @@ angular
           this.auth = data;
           var self = this;
           // send initial packet and reset sessionState
+          console.log("debug")
           let packet = constructPacket({
             packetType: PacketType.Info,
             payload: data.username
@@ -858,221 +893,13 @@ angular
         var constructPacket = ChatService.prototype.constructPacket;
 
         // Init: send check packet, original one.
-        /*
-        ChatService.prototype.changeState = function (rawData, isSend) {
-          // @rawData: { packetType: int, payload: Buffer }
-          // @isSend: true for sending packet
-          console.log('changeState rawData', rawData);
-          console.log('changeState, sessionState =', sessionState);
-
-          if (rawData.packetType == PacketType.Refuse) {
-            if (rawData.payload.readUInt8(0) == ResponseType.ErrorOccurs) {
-              smalltalk.alert('警告', '因其他客户端登陆，您已下线');
-              return;
-            } else {
-              console.log('changeState rawData', rawData);
-              smalltalk.alert('警告', '您已将用您的账号登陆的其他客户端下线');
-              return;
-            }
-          }
-
-          switch (sessionState) {
-            case SessionState.Init:
-              console.log('info', rawData);
-              sendPacket(rawData);
-              sessionState = SessionState.WaitForInfoResponse;
-              break;
-            case SessionState.WaitForInfoResponse:
-              if (rawData.packetType != PacketType.InfoResponse) {
-                console.log('rawData.packetType', rawData.packetType);
-                // error
-              } else {
-                // decode payload here
-                console.log('InfoResponse: data.payload', rawData.payload);
-                console.log('rawData', rawData);
-                let infoData = rawData.payload.readUInt8(0);
-                switch (infoData) {
-                  case ResponseType.UserNotExist:
-                    // error
-                    smalltalk.alert('警告', '用户名不存在');
-                    console.log('Wrong username');
-                    () => {globalSelf.killConnection();}
-                    break;
-                  case ResponseType.OK:
-                    // send password packet
-                    // data: password
-                    let passwordPacket = {
-                      packetType: PacketType.Password,
-                      payload: globalPassword
-                    };
-                    sendPacket(passwordPacket);
-
-                    // step state
-                    sessionState = SessionState.WaitForPasswordResponse;
-                    break;
-                  case ResponseType.AlreadyLoggedIn:
-                    smalltalk.alert('警告', '您的账号已在其他客户端登陆');
-                    break;
-                  default:
-                    console.log('unknown ResponseType');
-                    break;
-                }
-              }
-              break;
-
-            case SessionState.WaitForPasswordResponse:
-              // receive password
-              if (rawData.packetType != PacketType.PasswordResponse) {
-                // error
-                // this.killConnection()
-              } else {
-                // decode payload
-                let infoData = rawData.payload.readUInt8();
-                switch (infoData) {
-                  case ResponseType.ErrorOccurs:
-                    // error
-                    console.log('Wrong password packet type');
-                    () => {globalSelf.killConnection();}
-                    break;
-                  case ResponseType.ChangePassword:
-                    // popup reset password prompt
-                    // send password packet
-                    // continue waiting for password response
-                    // so no need to change state
-
-                    console.log('ResponseType.ChangePassword');
-                    smalltalk.prompt('您需要更改您的初始密码', '输入您的新密码').then(function (value) {
-                      sendPacket({
-                        packetType: PacketType.Password,
-                        payload: value
-                      });
-                      console.log('password reset!');
-                    });
-                    sessionState = SessionState.UserSync;
-                    break;
-                  case ResponseType.Wrong:
-                    // display message on label
-                    // and prompt for reset password
-                    // kill tcp connection and reset state
-                    console.log('Wrong password');
-
-                    break;
-                  case ResponseType.OK:
-                    console.log('ResponseType.OK');
-                    sessionState = SessionState.UserSync;
-                    break;
-                  default:
-                    console.log('unknown ResponseType');
-                    break;
-                }
-              }
-              break;
-
-            case SessionState.UserSync:
-              if (rawData.packetType != PacketType.Configuration) {
-                // () => {globalSelf.killConnection();}
-                console.log('wrong packet', rawData);
-              } else {
-                // change configuration storage
-                // globalSelf.user().prefeferences = globalSelf.decodeConfigurationPacket(rawData);
-                console.log('configuration: ', globalSelf.decodeConfigurationPacket(rawData));
-                sessionState = SessionState.HistorySync;
-              }
-              break;
-
-            case SessionState.HistorySync:
-              switch (rawData.packetType) {
-                case PacketType.SyncUserName:
-                  // read the byte at index 3
-                  // 0: Host2User, 1: User2Host
-                  // store username
-                  let data = globalSelf.decodeUserNamePacket(rawData);
-                  if (data.direction == 0) {
-                    globalSelf.cache.lastUsername = globalUsername;
-                  } else {
-                    globalSelf.cache.lastUsername = data.username;
-                  }
-                  // sessionState = SessionState.History;
-                  break;
-
-                case PacketType.History:
-                  let historyText = globalSelf.decodeTextPacket(rawData);
-                  // update view to show chat history
-
-                  $rootScope.$apply(function () {
-                    globalSelf.cache.messages.push({
-                      username: globalSelf.cache.lastUsername,
-                      body: historyText,
-                    });
-                  });
-
-                  setTimeout(function () {
-                    jQuery(".messages").getNiceScroll(0).resize();
-                    return jQuery(".messages").getNiceScroll(0).doScrollTop(999999, 999);
-                  }, 100);
-                  break;
-
-                case PacketType.SyncEnd:
-                  sessionState = SessionState.ClientWaiting;
-                  break;
-
-                default:
-                  break;
-              }
-              break;
-
-            case SessionState.ClientWaiting:
-              if (isSend) {
-                switch (rawData.packetType) {
-                  case PacketType.TextUsername:
-                    globalSelf.sendPacket(rawData);
-                    break;
-                  case PacketType.Text:
-                    // send, assume success
-                    // rawData should be packaged at higher levels
-                    globalSelf.sendPacket(rawData);
-                    sessionState = SessionState.ClientWaiting;
-                  default:
-                    break;
-                }
-              } else { // receive
-                switch (rawData.packetType) {
-                  case PacketType.TextUsername:
-                    // store source username
-                    globalSelf.cache.lastUsername = rawData.payload;
-                    break;
-                  case PacketType.Text:
-                    // display chat
-                    let text = globalSelf.decodeTextPacket(rawData);
-                    // update view to show chat history
-                    $rootScope.$apply(function () {
-                      globalSelf.cache.messages.push({
-                        username: globalSelf.cache.lastUsername,
-                        body: text,
-                      });
-                    });
-
-                    setTimeout(function () {
-                      jQuery(".messages").getNiceScroll(0).resize();
-                      return jQuery(".messages").getNiceScroll(0).doScrollTop(999999, 999);
-                    }, 100);
-
-                    break;
-
-                  default:
-                    break;
-                }
-              }
-          }
-        };
-        var changeState = ChatService.prototype.changeState;
-        */
 
         // Modified by ZZY
+
         ChatService.prototype.changeState = function (rawData, isSend) {
           // @rawData: { packetType: int, payload: Buffer }
           // @isSend: true for sending packet
-          console.log('changeState, sessionState =', sessionState);
+          console.log('changeState, ChatService.prototype.sessionState =', ChatService.prototype.sessionState);
           if (rawData) {
             console.log('changeState rawData', rawData);
             // console.log('changeState, sessionState =', sessionState);
@@ -1081,14 +908,14 @@ angular
             if (rawData.packetType == PacketType.Refuse) {
               if (rawData.payload.readUInt8(0) == ResponseType.ErrorOccurs) {
                 smalltalk
-                    .alert('警告', '因其他客户端用您的账号登陆，您已下线')
+                    .alert('Warning', 'Another one used your account to log in, you have to be offline.')
                     .then(() => {
                       globalSelf.killConnection();
                     });
                 return;
               } else {
                 console.log('changeState rawData', rawData);
-                smalltalk.alert('通知', '用您的账号登陆的其他客户端已经下线');
+                smalltalk.alert('Notice', 'Another client logged in using your account has been forced offline.');
                 return;
               }
             }
@@ -1096,7 +923,12 @@ angular
               console.log('get new OnlineUser packet');
               if (globalSelf.onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)) < 0) {
                 globalSelf.onlineUserList.push(globalSelf.decodeUserNamePacket(rawData));
-                console.log('new online user:', globalSelf.onlineUserList[globalSelf.onlineUserList.length - 1]);
+                $rootScope.$apply();
+                let newUser = globalSelf.onlineUserList[globalSelf.onlineUserList.length - 1];
+                console.log('new online user:', newUser);
+                if (newUser != globalSelf.user()){
+                  smalltalk.alert('Notice', 'User ' + globalSelf.onlineUserList[globalSelf.onlineUserList.length - 1] + ' online.');
+                }
               } else {
                 console.log('user already exist in the list');
               }
@@ -1106,15 +938,20 @@ angular
               console.log('get new OfflineUser packet');
               if (globalSelf.onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)) >= 0) {
                 let offline = globalSelf.onlineUserList.splice(globalSelf.onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)), 1);
+                $rootScope.$apply();
                 console.log('offline user:', offline[0]);
+                if (offline[0] != globalSelf.user()) {
+                  smalltalk.alert('Notice', 'User ' + offline[0] + ' offline.');
+                }
               } else {
                 console.log('user not exist in the list');
               }
               return;
             }
             // busy
-            else if (rawData.packetType == PacketType.RecvInvit && (sessionState == SessionState.ClientInviting || sessionState == SessionState.InGame || (sessionState == SessionState.ClientInvited && !notResponsingInvitation))) {
+            else if (rawData.packetType == PacketType.RecvInvit && (ChatService.prototype.sessionState == SessionState.ClientInviting || ChatService.prototype.sessionState == SessionState.InGame || (ChatService.prototype.sessionState == SessionState.ClientInvited && !notResponsingInvitation))) {
               // Busy gaming
+              console.log(ChatService.prototype.sessionState);
               console.log('busy gaming');
               /*
               const buf = Buffer.allocUnsafe(1);
@@ -1128,14 +965,16 @@ angular
               return;
             }
             else if (rawData.packetType == PacketType.GameOver) {
-              if (sessionState == SessionState.ClientWaiting || sessionState == SessionState.ClientInvited || sessionState == SessionState.ClientInviting || sessionState == SessionState.InGame) {
+              if (ChatService.prototype.sessionState == SessionState.ClientWaiting || ChatService.prototype.sessionState == SessionState.ClientInvited || ChatService.prototype.sessionState == SessionState.ClientInviting || ChatService.prototype.sessionState == SessionState.InGame) {
                 console.log('game over, you lose');
                 smalltalk
-                    .confirm('警告', '您输了！再来一局？')
+                    .confirm('Oops!', 'You lose! Play again?')
                     .then(() => {
                       console.log('another game');
-                      sessionState = SessionState.ClientWaiting;
-                      globalSelf.opponentName = " ";
+                      ChatService.prototype.sessionState = SessionState.ClientWaiting;
+                      globalSelf.opponentName = "Don\'t have one";
+                      globalSelf.Game.prototype.initGame();
+                      $rootScope.$apply();
                     })
                     .catch(() => {
                       console.log('exit');
@@ -1144,7 +983,7 @@ angular
               }
               else {
                 console.log('rawData.packetType: '+ rawData.packetType);
-                smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType + ', sessionState: ' + sessionState).then(
+                smalltalk.alert('Warning', 'Wrong TCP packet from server rawData.packetType: ' + rawData.packetType + ', sessionState: ' + ChatService.prototype.sessionState).then(
                     () => {
                       globalSelf.killConnection();
                     }
@@ -1157,32 +996,33 @@ angular
             }
           }
 
-          switch (sessionState) {
+          console.log("Debug1", ChatService.prototype.sessionState);
+          switch (ChatService.prototype.sessionState) {
             case SessionState.GreatWall:
               console.log('Howdy! This is temporarily the end!');
               console.log('hasValidUser: ', Chat.hasValidUser);
               console.log('validOnline: ', globalSelf.validOnline());
               console.log('globalSelf.opponentName', globalSelf.opponentName);
               console.log('user: ', globalSelf.user());
-              smalltalk.alert('警告', '目前暂时在这里告一段落，再见！');
+              smalltalk.alert('Warning', '目前暂时在这里告一段落，再见！');
               break;
             case SessionState.FirstThingsFirst:
               Chat.hasValidUser = false;
               console.log('app start');
-              sessionState = SessionState.Init;
+              ChatService.prototype.sessionState = SessionState.Init;
               globalSelf.autoconnect();
               break;
             case SessionState.Init:
               console.log('info', rawData);
               sendPacket(rawData);
-              sessionState = SessionState.WaitForInfoResponse;
+              ChatService.prototype.sessionState = SessionState.WaitForInfoResponse;
               break;
             case SessionState.WaitForInfoResponse:
               console.log('WaitForInfoResponse');
               if (rawData.packetType != PacketType.InfoResponse) {
                 // error
                 console.log('rawData.packetType: '+ rawData.packetType);
-                smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType).then(
+                smalltalk.alert('Warning', 'Wrong TCP packet from server rawData.packetType: ' + rawData.packetType).then(
                     () => {
                       globalSelf.killConnection();
                     }
@@ -1196,10 +1036,10 @@ angular
                   case ResponseType.UserNotExist:
                     // user not exist
                     console.log('Wrong username: UserNotExist');
-                    smalltalk.alert('警告', '用户名不存在，请重新登录').then(
+                    smalltalk.alert('Warning', 'Username not exist, please Log in again.').then(
                         function() {
                           Chat.hasValidUser = false;
-                          sessionState = SessionState.FirstThingsFirst;
+                          ChatService.prototype.sessionState = SessionState.FirstThingsFirst;
                           changeState();
                         }
                     );
@@ -1208,8 +1048,8 @@ angular
                   case ResponseType.ErrorOccurs:
                     // error occurs
                     console.log('Wrong username: ErrorOccurs');
-                    smalltalk.alert('警告', '出现其他用户名错误').then(
-                      () => {globalSelf.killConnection();}
+                    smalltalk.alert('Warning', 'Unknown error occurs.').then(
+                        () => {globalSelf.killConnection();}
                     );
                     break;
                   case ResponseType.OK:
@@ -1223,12 +1063,12 @@ angular
                     sendPacket(passwordPacket);
 
                     // step state
-                    sessionState = SessionState.WaitForPasswordResponse;
+                    ChatService.prototype.sessionState = SessionState.WaitForPasswordResponse;
                     break;
                   default:
                     console.log('unknown ResponseType');
-                    smalltalk.alert('警告', '服务器端info_response包错误，rawData.ResponseType: ', infoData).then(
-                      () => {globalSelf.killConnection();}
+                    smalltalk.alert('Warning', 'Wrong info_response packet from server rawData.ResponseType: ', infoData).then(
+                        () => {globalSelf.killConnection();}
                     );
                     break;
                 }
@@ -1239,7 +1079,7 @@ angular
               if (rawData.packetType != PacketType.PasswordResponse) {
                 // error
                 console.log('rawData.packetType: '+ rawData.packetType);
-                smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType).then(
+                smalltalk.alert('Warning', 'Wrong TCP packet from server rawData.packetType: ' + rawData.packetType).then(
                     // globalSelf.killConnection()
                 );
               } else {
@@ -1256,10 +1096,10 @@ angular
                     // and prompt for reset password
                     // kill tcp connection and reset state
                     console.log('Wrong password');
-                    smalltalk.alert('警告', '密码错误，请重新登录').then(
+                    smalltalk.alert('Warning', 'Wrong password, please Log in again.').then(
                         function() {
                           Chat.hasValidUser = false;
-                          sessionState = SessionState.FirstThingsFirst;
+                          ChatService.prototype.sessionState = SessionState.FirstThingsFirst;
                           changeState();
                         }
                     );
@@ -1267,14 +1107,15 @@ angular
                   case ResponseType.OK:
                     console.log('ResponseType.OK');
                     Chat.hasValidUser = true;
+                    $rootScope.$apply();
 
                     // TODO: This is problematic!
                     // this.cache.validOnline = true;
-                    sessionState = SessionState.UserSync;
+                    ChatService.prototype.sessionState = SessionState.UserSync;
                     break;
                   default:
                     console.log('unknown ResponseType');
-                    smalltalk.alert('警告', '服务器端passwd_response包错误，rawData.ResponseType: ', infoData).then(
+                    smalltalk.alert('Warning', 'Wrong passwd_response packet from server rawData.ResponseType: ', infoData).then(
                         () => {
                           globalSelf.killConnection();
                         }
@@ -1287,7 +1128,7 @@ angular
               if (rawData.packetType != PacketType.SyncUserName && rawData.packetType != PacketType.SyncEnd) {
                 // error
                 console.log('rawData.packetType: '+ rawData.packetType);
-                smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType').then(
+                smalltalk.alert('Warning', 'Wrong TCP packet from server rawData.packetType').then(
                     // globalSelf.killConnection()
                 );
               } else {
@@ -1295,18 +1136,19 @@ angular
                   case PacketType.SyncUserName:
                     if (globalSelf.onlineUserList.indexOf(globalSelf.decodeUserNamePacket(rawData)) < 0) {
                       globalSelf.onlineUserList.push(globalSelf.decodeUserNamePacket(rawData));
+                      $rootScope.$apply();
                       console.log('online user:', globalSelf.onlineUserList[globalSelf.onlineUserList.length-1]);
                     }
                     break;
                   case PacketType.SyncEnd:
                     console.log('sync online user end');
-                    sessionState = SessionState.ClientWaiting;
+                    ChatService.prototype.sessionState = SessionState.ClientWaiting;
                     break;
 
                   default:
                     console.log('sync pack unknown');
-                    smalltalk.alert('警告', '未知packet类型').then(
-                      () => {globalSelf.killConnection();}
+                    smalltalk.alert('Warning', 'Unknown packet type').then(
+                        () => {globalSelf.killConnection();}
                     );
                     break;
                 }
@@ -1318,20 +1160,23 @@ angular
               // 2. a "RecvInvit" packet has been received.
               // TODO: Must wait after invitation button has been pressed.
               // TODO: This means that when click invitation button, changeState() should be triggered.
+                globalSelf.planeDrawn = false;
+                // $rootScope.$apply();
               if (isSend) {
                 // Invite others
                 // Here the invitation button has been clicked.
                 // clickedInviteButton = false;
                 console.log('invite others');
                 sendPacket(rawData);
-                sessionState = SessionState.ClientInviting;
+                ChatService.prototype.sessionState = SessionState.ClientInviting;
               }
               else {
                 // Being invited
                 // Here nothing has been done by user, this state is triggered because a packet has been received.
-                globalSelf.opponentName = " ";
+                globalSelf.opponentName = "Don\'t have one";
+                $rootScope.$apply();
                 console.log('being invited');
-                sessionState = SessionState.ClientInvited;
+                ChatService.prototype.sessionState = SessionState.ClientInvited;
                 changeState(rawData);
               }
               break;
@@ -1342,11 +1187,14 @@ angular
                 console.log('notResponsingInvitation: ', notResponsingInvitation);
                 let inviter = globalSelf.decodeUserNamePacket(rawData);
                 smalltalk
-                    .confirm('邀请确认', '是否接受' + inviter + '的邀请？')
+                    .confirm('Confirmation of invitation', 'Accept the invitation of ' + inviter + '?')
                     .then(() => {
                       // invitation accepted
                       console.log('Accepted invitation from ' + inviter);
+                      globalSelf.Game.prototype.isMyTurn = false;
+                      // $rootScope.$apply();
                       globalSelf.opponentName = inviter;
+                      $rootScope.$apply();
                       const buf = Buffer.allocUnsafe(1);
                       buf.writeUInt8(ResponseType.OK, 0);
                       let packet = constructPacket({
@@ -1355,7 +1203,7 @@ angular
                       });
                       sendPacket(packet);
                       notResponsingInvitation = true;
-                      sessionState = SessionState.InGame;
+                      ChatService.prototype.sessionState = SessionState.InGame;
                       changeState();
                     })
                     .catch(() => {
@@ -1370,12 +1218,12 @@ angular
                       sendPacket(packet);
                       notResponsingInvitation = true;
                       // Wait to invite others or to be invited.
-                      sessionState = SessionState.ClientWaiting;
+                      ChatService.prototype.sessionState = SessionState.ClientWaiting;
                     });
               } else {
                 // Get wrong packet
                 console.log('rawData.packetType: '+ rawData.packetType);
-                smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType).then(
+                smalltalk.alert('Warning', 'Wrong TCP packet from server rawData.packetType: ' + rawData.packetType).then(
                     // globalSelf.killConnection()
                 );
               }
@@ -1386,7 +1234,7 @@ angular
               if (rawData.packetType != PacketType.InvitResponse) {
                 // Get wrong packet
                 console.log('rawData.packetType: '+ rawData.packetType);
-                smalltalk.alert('警告', '服务器端TCP包错误，rawData.packetType: ' + rawData.packetType).then(
+                smalltalk.alert('Warning', 'Wrong TCP packet from server rawData.packetType: ' + rawData.packetType).then(
                     // globalSelf.killConnection()
                 );
               }
@@ -1394,27 +1242,29 @@ angular
                 let infoData = rawData.payload.readUInt8(0);
                 switch (infoData) {
                   case ResponseType.UserNotExist:
-                    smalltalk.alert('警告', '您选中的用户不存在，请重新选择或等待被选');
-                    sessionState = SessionState.ClientWaiting;
+                    smalltalk.alert('Warning', 'The user you chose does not exist. Please invite another user or wait for invitation.');
+                    ChatService.prototype.sessionState = SessionState.ClientWaiting;
                     break;
                   case ResponseType.OK:
-                    smalltalk.alert('通知', '对方同意了您的请求，即将进入游戏').then(
+                    smalltalk.alert('Notice', 'The user you chose accepted your invitation, game starts.').then(
                         function () {
-                          sessionState = SessionState.InGame;
+                          globalSelf.Game.prototype.isMyTurn = true;
+                          $rootScope.$apply();
+                          ChatService.prototype.sessionState = SessionState.InGame;
                           changeState();
                         }
                     );
                     break;
                   case ResponseType.RefuseInvit:
-                    smalltalk.alert('警告', '对方拒绝了您的请求，请重新选择或等待被选');
-                    sessionState = SessionState.ClientWaiting;
+                    smalltalk.alert('Warning', 'The user you chose refused your invitation. Please invite another user or wait for invitation.');
+                    ChatService.prototype.sessionState = SessionState.ClientWaiting;
                     break;
                   case ResponseType.Busy:
-                    smalltalk.alert('警告', '对方正在进行游戏或正在处理其他人的邀请，请重新选择或等待被选');
-                    sessionState = SessionState.ClientWaiting;
+                    smalltalk.alert('Warning', 'The user you chose is busy gaming or responding to another one\'s invitation. Please invite another user or wait for invitation.');
+                    ChatService.prototype.sessionState = SessionState.ClientWaiting;
                     break;
                   default:
-                    smalltalk.alert('警告', '不可处理的ResponseType: ' + infoData).then(
+                    smalltalk.alert('Warning', 'Unable to process ResponseType: ' + infoData).then(
                         // globalSelf.killConnection()
                     );
                 }
@@ -1427,123 +1277,43 @@ angular
               if(!rawData) {
                 // not get any packet
                 // draw planes
-                smalltalk.alert('通知', '请为对方画三架飞机');
-                sessionState = SessionState.InGame;
+                smalltalk.alert('Notice', 'Please draw three planes on the opponent\'s board for the opponent to guess.');
+                $rootScope.$apply();
               } else {
                 // get packet from server
                 switch (rawData.packetType) {
                   case PacketType.Board:
                     // received opponent's three planes.
                     console.log('received opponent\'s three planes');
+                    smalltalk.alert('Notice', 'received opponent\'s three planes, game begin.');
+                    globalSelf.planeDrawn = true;
+                    $rootScope.$apply();
                     globalSelf.Game.prototype.recvOpponentBoard(rawData.payload);
+                    $rootScope.$apply();
                     break;
                   case PacketType.SingleCoord:
                     // received a single coordinate.
                     console.log('get single coord');
+                    globalSelf.Game.prototype.isMyTurn = true;
+                    globalSelf.Game.prototype.recvCoordinate(rawData.payload, false);
+                    $rootScope.$apply();
                     break;
                   case PacketType.DoubleCoord:
                     // received two coordinates.
                     console.log('get double coord');
+                    globalSelf.Game.prototype.isMyTurn = true;
+                    globalSelf.Game.prototype.recvCoordinate(rawData.payload, true);
+                    $rootScope.$apply();
                     break;
                   default:
                     break;
                 }
               }
-
-              //sessionState = SessionState.GreatWall;
-              //changeState();
               break;
-              /*
-              case SessionState.ClientWaiting:
-                if (isSend) {
-                  switch (rawData.packetType) {
-                    case PacketType.TextUsername:
-                      globalSelf.sendPacket(rawData);
-                      break;
-                    case PacketType.Text:
-                      // send, assume success
-                      // rawData should be packaged at higher levels
-                      globalSelf.sendPacket(rawData);
-                      sessionState = SessionState.ClientWaiting;
-                    default:
-                      break;
-                  }
-                } else { // receive
-                  switch (rawData.packetType) {
-                    case PacketType.TextUsername:
-                      // store source username
-                      globalSelf.cache.lastUsername = rawData.payload;
-                      break;
-                    case PacketType.Text:
-                      // display chat
-                      let text = globalSelf.decodeTextPacket(rawData);
-                      // update view to show chat history
-                      $rootScope.$apply(function () {
-                        globalSelf.cache.messages.push({
-                          username: globalSelf.cache.lastUsername,
-                          body: text,
-                        });
-                      });
-
-                      setTimeout(function () {
-                        jQuery(".messages").getNiceScroll(0).resize();
-                        return jQuery(".messages").getNiceScroll(0).doScrollTop(999999, 999);
-                      }, 100);
-
-                      break;
-              case SessionState.HistorySync:
-                switch (rawData.packetType) {
-                  case PacketType.SyncUserName:
-                    // read the byte at index 3
-                    // 0: Host2User, 1: User2Host
-                    // store username
-                    let data = globalSelf.decodeUserNamePacket(rawData);
-                    if (data.direction == 0) {
-                      globalSelf.cache.lastUsername = globalUsername;
-                    } else {
-                      globalSelf.cache.lastUsername = data.username;
-                    }
-                    // sessionState = SessionState.History;
-                    break;
-
-                  case PacketType.History:
-                    let historyText = globalSelf.decodeTextPacket(rawData);
-                    // update view to show chat history
-
-                    $rootScope.$apply(function () {
-                      globalSelf.cache.messages.push({
-                        username: globalSelf.cache.lastUsername,
-                        body: historyText,
-                      });
-                    });
-
-                    setTimeout(function () {
-                      jQuery(".messages").getNiceScroll(0).resize();
-                      return jQuery(".messages").getNiceScroll(0).doScrollTop(999999, 999);
-                    }, 100);
-                    break;
-                  case PacketType.SyncEnd:
-                    sessionState = SessionState.ClientWaiting;
-                    break;
-
-                  default:
-                    break;
-                }
-                break;
-    */
             default:
               break;
           }
         };
-
-        //   }
-        // };
-
-
-
-
-
-
         var changeState = ChatService.prototype.changeState;
 
         ChatService.prototype.sendPacket = function sendPacket(packet) {
@@ -1556,6 +1326,9 @@ angular
           socket.write(packet);
         };
         var socket = $Socket.socket;
+        // setInterval(function () {
+        //   console.log(socket);
+        // }, 1000);
         var sendPacket = ChatService.prototype.sendPacket;
 
         // ZZY
@@ -1585,10 +1358,13 @@ angular
         // };
 
         // game logic
-        ChatService.prototype.Game = Game;
+        let chatInstance = new ChatService($Socket.socket, $Settings);
+        console.log('chatInstance', chatInstance);
+        ChatService.prototype.Game = Game(chatInstance);
 
         // Instantiates a new chat service
-        return new ChatService($Socket.socket, $Settings);
+        // Chat.prototype.SessionState = SessionState.FirstThingsFirst;
+        return chatInstance;
 
 
       }

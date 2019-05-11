@@ -149,37 +149,37 @@ void ApplicationLayer::MessageToApp(Client *client_name_)
                         break;
                 }
                 case SessionState::WaitInvitResponse: {
-                        switch(message_->type_) {
-                                case PacketType::InvitResponse: {
-                                        LOG(Info) << "Client A recv invitation response from CLinet B" << endl;
-                                        LOG(Info) << "Debug Enter WaitInvitResponse." << endl;
-                                        if(message_->respond_ == ResponseType::OK) {
-                                                // client need to know that its invitation works
-                                                client_name_->message_atop.type_ = PacketType::InvitResponse;
-                                                client_name_->message_atop.respond_ = ResponseType::OK;
-                                                PreLayerInstance.pack_Message(client_name_); 
-                                                client_name_->state = SessionState::WaitForBoard;
-                                                // change opponent status and game info
-                                                Client* Client_A;
-                                                if((Client_A = TransLayerInstance.find_by_username(respond_->user_name_a_)) != NULL) {
-                                                       Client_A->state = SessionState::WaitForBoard;
-                                                       Client_A->game_info_.opponent_ = client_name_;
-                                                       client_name_->game_info_.opponent_ = Client_A;
-                                                }
-                                                else {
-                                                        LOG(Error) << "Can't Find Client A after B responsed." << endl;
-                                                }
-                                        }
-                                        else if(message_->respond_ == ResponseType::RefuseInvit) {
-                                                client_name_->message_atop.type_ = PacketType::InvitResponse;
-                                                client_name_->message_atop.respond_ = ResponseType::RefuseInvit;
-                                                PreLayerInstance.pack_Message(client_name_); 
-                                                client_name_->state = SessionState::ServerWaiting;
-                                        }
-                                        break;
-                                }
-                        }
-                        break;
+                        // switch(message_->type_) {
+                        //         case PacketType::InvitResponse: {
+                        //                 LOG(Info) << "Client A recv invitation response from CLinet B" << endl;
+                        //                 LOG(Info) << "Debug Enter WaitInvitResponse." << endl;
+                        //                 if(message_->respond_ == ResponseType::OK) {
+                        //                         // client need to know that its invitation works
+                        //                         client_name_->message_atop.type_ = PacketType::InvitResponse;
+                        //                         client_name_->message_atop.respond_ = ResponseType::OK;
+                        //                         PreLayerInstance.pack_Message(client_name_); 
+                        //                         client_name_->state = SessionState::WaitForBoard;
+                        //                         // change opponent status and game info
+                        //                         Client* Client_A;
+                        //                         if((Client_A = TransLayerInstance.find_by_username(respond_->user_name_a_)) != NULL) {
+                        //                                Client_A->state = SessionState::WaitForBoard;
+                        //                                Client_A->game_info_.opponent_ = client_name_;
+                        //                                client_name_->game_info_.opponent_ = Client_A;
+                        //                         }
+                        //                         else {
+                        //                                 LOG(Error) << "Can't Find Client A after B responsed." << endl;
+                        //                         }
+                        //                 }
+                        //                 else if(message_->respond_ == ResponseType::RefuseInvit) {
+                        //                         client_name_->message_atop.type_ = PacketType::InvitResponse;
+                        //                         client_name_->message_atop.respond_ = ResponseType::RefuseInvit;
+                        //                         PreLayerInstance.pack_Message(client_name_); 
+                        //                         client_name_->state = SessionState::ServerWaiting;
+                        //                 }
+                        //                 break;
+                        //         }
+                        // }
+                        // break;
                 }
                 case SessionState::Responding: {
                         switch(message_->type_) {
@@ -290,8 +290,20 @@ void ApplicationLayer::MessageToApp(Client *client_name_)
                                         LOG(Info) << "Send Board information to Client 2" << endl;
                                         client_name_->state = SessionState::InGame;
                                         CopyBoard(client_name_, client_name_->game_info_.opponent_);
-                                        client_name_->game_info_.opponent_->message_atop.type_ = PacketType::Board;
-                                        PreLayerInstance.pack_Message(client_name_->game_info_.opponent_);
+                                        if(client_name_->game_info_.opponent_->state != SessionState::InGame) {
+                                                // I do not need to send board
+                                                LOG(Info) << "Do not need to send board." << endl;
+                                                break;
+                                        }
+                                        else {
+                                                // send My board
+                                                LOG(Info) << "Need to send both board" << endl;
+                                                client_name_->message_atop.type_ = PacketType::Board;
+                                                PreLayerInstance.pack_Message(client_name_);
+                                                // send other's board
+                                                client_name_->game_info_.opponent_->message_atop.type_ = PacketType::Board;
+                                                PreLayerInstance.pack_Message(client_name_->game_info_.opponent_);
+                                        }
                                         break;
                                }
                                break;
@@ -327,6 +339,8 @@ void ApplicationLayer::MessageToApp(Client *client_name_)
                                         LOG(Info) << "Game Over!" << endl;
                                         LOG(Info) << client_name_->host_username_ << "wins!" << endl;
                                         client_name_->state = SessionState::ServerWaiting;
+                                        client_name_->game_info_.opponent_->message_atop.type_ = PacketType::GameOver;
+                                        PreLayerInstance.pack_Message(client_name_->game_info_.opponent_);
                                         client_name_->game_info_.opponent_->state = SessionState::ServerWaiting;
                                         break;
                                 }

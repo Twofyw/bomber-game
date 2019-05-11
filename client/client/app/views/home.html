@@ -25,18 +25,18 @@
         </li>
     </menu>
     <footer class="footer text-center">
-<!--        login status-->
-        <span ng-bind="$Chat.validOnline() ? '已登录' : '未登录'"
+        <!--        login status-->
+        <span ng-bind="$Chat.validOnline() ? 'Online' : 'Offline'"
               ng-class="'badge badge-pill ' + ($Chat.validOnline() ? 'badge-primary' : 'badge-dark')"> </span>
-<!--        connection status-->
-        <span ng-bind="$Chat.connected() ? '已连接' : '未连接'"
+        <!--        connection status-->
+        <span ng-bind="$Chat.connected() ? 'Connected' : 'Not Connected'"
               ng-class="'badge badge-pill ' + ($Chat.connected() ? 'badge-primary' : 'badge-dark')"></span><br>
-<!--        is my turn-->
-        <span ng-bind="$Chat.Game.prototype.isMyTurn ? '本方下棋中' : '对方下棋中'"
-              ng-class="'badge badge-pill ' + ($Chat.Game.prototype.isMyTurn ? 'badge-success' : 'badge-danger')"></span><br>
-        <button ng-style="$Chat.doubleCordBtnStyle($Chat.isDoubleCord)"
+        <!--        is my turn-->
+        <span ng-bind="($Chat.Game.prototype.isMyTurn && $Chat.planeDrawn) ? 'Go' : 'Wait'"
+              ng-class="'badge badge-pill ' + (($Chat.Game.prototype.isMyTurn && $Chat.planeDrawn) ? 'badge-success' : 'badge-danger')"></span><br>
+        <button ng-style="$Chat.doubleCordBtnStyle($Chat.isDoubleCord && $Chat.planeDrawn)"
                 ng-click="$Chat.doubleCordBtnClick()"
-                class="btn btn-primary pt-3">{{$Chat.doubleCordBtnModel($Chat.isDoubleCord)}}</button>
+                class="btn btn-primary pt-3">{{$Chat.doubleCordBtnModel($Chat.isDoubleCord && $Chat.planeDrawn)}}</button>
     </footer>
 </div>
 <!--class="row" --><!--class="col-md" -->
@@ -45,15 +45,16 @@
     <div class="boards">
         <div class="oppo-background">
             <div class="align-right text-left">
-                <h5>Opponent progress<br><span class="badge badge-secondary">{{$Chat.opponentName}}</span></h5>
+                <h5>Opponent<br><span class="badge badge-secondary">{{$Chat.opponentName}}</span></h5>
             </div>
             <div class="our-board btn-group btn-matrix">
                 <div ng-repeat="colLabel in $Chat.colLabels">
                     <div ng-repeat="rowLabel in $Chat.rowLabels">
-<!--                        <button class="badge btn-primary" ng-style="$Chat.mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.mapToColor($Chat.gameMap[rowLabel][colLabel]))"> </button>-->
+                        <!--                        <button class="badge btn-primary" ng-style="$Chat.mapToColor($Chat.gameMap[rowLabel][colLabel])" ng-click="$Chat.demo(rowLabel, colLabel, $Chat.mapToColor($Chat.gameMap[rowLabel][colLabel]))"> </button>-->
+<!--                        {{$Chat.Game.prototype.planeMap[rowLabel][colLabel]}} || {{$Chat.sessionState}} || {{$Chat.Game.prototype.isMyTurn}}-->
                         <button class="badge btn-primary"
                                 ng-style="$Chat.mapToColor($Chat.Game.prototype.planeMap[rowLabel][colLabel])"
-                                ng-disabled="$Chat.Game.prototype.planeMap[rowLabel][colLabel] % 10 != 9 || $Chat.Game.prototype.state > 3"
+                                ng-disabled="$Chat.Game.prototype.planeMap[rowLabel][colLabel] % 10 != 9 || $Chat.Game.prototype.state > 3 || $Chat.sessionState != 11"
                                 ng-click="$Chat.Game.prototype.Click(rowLabel, colLabel, $Chat.isDoubleCord)"> </button>
                     </div>
                 </div>
@@ -65,7 +66,7 @@
         </div>
 
         <div class="align-right text-left">
-            <h5>Guess now!<br><span class="badge badge-secondary">{{$Chat.user()}}</span></h5>
+            <h5>Me<br><span class="badge badge-secondary">{{$Chat.user()}}</span></h5>
         </div>
         <div class="their-board btn-group btn-matrix">
             <div ng-repeat="colLabel in $Chat.colLabels">
@@ -73,39 +74,10 @@
                     <button class="badge btn-primary"
                             ng-style="$Chat.mapToColor($Chat.Game.prototype.gameMap[rowLabel][colLabel])"
                             ng-click="$Chat.Game.prototype.Click(rowLabel, colLabel, $Chat.isDoubleCord)"
-                            ng-disabled="$Chat.Game.prototype.gameMap[rowLabel][colLabel] % 10 != 9 || !$Chat.Game.prototype.isMyTurn"
+                            ng-disabled="$Chat.Game.prototype.gameMap[rowLabel][colLabel] % 10 != 9 || !$Chat.Game.prototype.isMyTurn || $Chat.sessionState != 11"
                     > </button>
                 </div>
             </div>
         </div>
-<!--        <br>-->
     </div>
-
-    <!--  <div class="top">-->
-    <!--    <div class="avatar" style="float: right; padding-right: 12px">-->
-    <!--      <img width="50" height="50" ng-src="{{ $Chat.user().image }}">-->
-    <!--    </div>-->
-    <!--    <div class="info" style="float: right; width: 250px; text-align: right; padding: 12px">-->
-    <!--      <div class="name" ng-bind="$Chat.user().name"></div>-->
-    <!--      <div class="count status on">online for {{ $moment($Chat.user().timestamp).fromNow(true) }}</div>-->
-    <!--    </div>-->
-    <!--  </div>-->
-    <!--  <ul class="messages">-->
-    <!--    <li ng-class="{'i': isMine, 'friend-with-a-SVAGina': !isMine}" ng-repeat="message in $Chat.messages()"-->
-    <!--        ng-init="isMine = (message.username === $Chat.user())">-->
-
-    <!--      <div class="head">-->
-    <!--        <span class="name" ng-bind="message.username"></span>-->
-    <!--        <span class="time" ng-bind="$moment(message.timestamp).fromNow()"></span>-->
-    <!--      </div>-->
-
-    <!--      <div class="message" ng-bind="message.body"></div>-->
-
-    <!--    </li>-->
-    <!--  </ul>-->
-    <!--  <div class="write-form">-->
-    <!--    <textarea placeholder="Type your message..." name="e" rows="2" ng-model="input.body" ng-change=""-->
-    <!--              ng-keypress="keypress($event)"></textarea>-->
-    <!--    <span class="send" ng-click="send(input)">Send</span>-->
-    <!--  </div>-->
 </div>

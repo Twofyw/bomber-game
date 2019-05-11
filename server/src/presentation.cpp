@@ -313,6 +313,16 @@ StatusCode PresentationLayer::pack_Message(Client *client){
             temp_str = pack_DoubleCoord(message);
             client->send_buffer.push(temp_str);
         }
+
+        //gameOver
+        if(message.type_ == PacketType::GameOver){
+            std::vector<uint8_t> temp;
+            temp.push_back((uint8_t)PacketType::GameOver);
+            temp.push_back((uint8_t)0);
+            temp.push_back((uint8_t)0);
+
+            client->send_buffer.push(temp);
+        }
     }
 
     return StatusCode::OK; 

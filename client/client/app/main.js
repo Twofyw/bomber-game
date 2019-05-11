@@ -11,7 +11,8 @@ angular
     DEFAULT.PKG('settings'),
     DEFAULT.PKG('moment'),
     DEFAULT.PKG('socket'),
-    DEFAULT.PKG('chat')
+    DEFAULT.PKG('chat'),
+    //DEFAULT.PKG('i18n'),
 
   ])
 
@@ -56,5 +57,5 @@ angular
     $rootScope.$Socket = $Socket;
     $rootScope.$Chat = $Chat;
     $rootScope.$moment = $moment;
-
+    //$rootScope.$I18n = $I18n;
   }]);
