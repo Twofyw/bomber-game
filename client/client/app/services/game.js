@@ -14,44 +14,24 @@ const PlaneDirection = Object.freeze({
 });
 
 var SessionState = Object.freeze({
-    "FirstThingsFirst": 0,
-    "Init": 1, // send check
-    "WaitForInfoResponse": 2, // Match user in database, password not received yet
+    "Init": 0,
+    "GatherUserInfo": 1, // send check
+    "WaitForUsernameResponse": 2, // Match user in database, password not received yet
     // If user exists, send a response
     "WaitForPasswordResponse": 3, // Send UserCheck response
-    "UserExists": 4, // Branch #1, receive password and match password in database
-    "PasswordReset": 5, // First login. Receive new password and update database
-    "AlreadyLoggedIn": 6, // Kick off the logged in session
-    "UserSync": 7, // Merge #1, send preference
+    "UserSync": 4, // Merge #1, send preference
     "ClientWaiting": 8,
     "ClientInvited": 9,
     "ClientInviting": 10,
-    //"Draw": 11,
     "InGame": 11,
-
-    "HistorySync": 67, // Send history
-    // Branch #2 and Merge #2, branch according to the media_type
-    // of the next packet (either received or sent).
-    // Send has priority over read.
-    "TextUsername": 69, // Target text username
-    "Text": 60, // Text data
-    "FileUsername": 61, // Target file username
-    "FileName": 62,
-    "FileInProgress": 63, // Until a FileEnd packet is received
-    "GroupUsernameList": 64, // Target group username list
-    "GroupText": 65, // Target group text data
-    // go back to ServerWaiting state
-    // ZZY
-    "GreatWall": 99
 });
 
 var PacketType = Object.freeze({
     "Info": 0x00,
-    "InfoResponse": 0x01,
+    "UsernameResponse": 0x01,
     "Password": 0x02,
     "PasswordResponse": 0x03,
     "Refuse": 0x04,
-    // "Configuration": 0x05,
     "SyncUserName": 0x06,
     "OnlineUser": 0x07,
     "SyncEnd": 0x08,
@@ -63,13 +43,6 @@ var PacketType = Object.freeze({
     "SingleCoord": 0x0D,
     "DoubleCoord": 0x0E,
     "GameOver": 0x0F,
-    "TextUsername": 0x99,
-    "Text": 0x9A,
-    "FileName": 0x9B,
-    "FileInProgress": 0x9C,
-    "GroupTextUserlist": 0x9D,
-    "FileEnd": 0x9E,
-    "FileUsername": 0x9F,
 });
 
 const Color = Object.freeze({
@@ -98,9 +71,6 @@ let Game = function (Chat) {
     Game.prototype.Chat = Chat;
     Game.prototype.recvBoard = false;
     Game.prototype.headColor = Color.notKnown;
-    // Game.prototype.PacketType = PacketType;
-    // console.log("*****************", Game.prototype.Chat.socket)
-    // Game.prototype.Chat.socket.on('data', Game.prototype.Chat.socketDataCallback);
 
     // init
     Game.prototype.gameMap = [];
@@ -131,35 +101,6 @@ let Game = function (Chat) {
 var isCoordEqual = function (cord1, cord2) {
     return (cord1[0] == cord2[0]) && (cord1[1] == cord2[1])
 };
-
-// var socketCallBack = function (data) {
-//     // change state machine and process data here
-//     console.log('data received', data);
-
-//     // append data to existing buffer and check for length
-//     receiveBuffer = Buffer.concat([receiveBuffer, data]);
-
-//     if (receiveBuffer.length < 3) {
-//     receiveBuffer = Buffer.concat([receiveBuffer, data]);
-//     }
-
-//     let payloadLength = receiveBuffer.readUInt16BE(1);
-//     while (receiveBuffer.length >=3 && receiveBuffer.length >= payloadLength + 3) {
-//     console.log('receiveBuffer', receiveBuffer);
-//     let payloadEndPosition = 3 + payloadLength;
-//     let packet = decodePacket(receiveBuffer.slice(0, payloadEndPosition));
-//     if (payloadEndPosition == receiveBuffer.length) {
-//         receiveBuffer = Buffer.allocUnsafe(0);
-//         payloadLength = 0;
-//     } else {
-//         receiveBuffer = receiveBuffer.slice(payloadEndPosition, receiveBuffer.length);
-//         payloadLength = receiveBuffer.readUInt16BE(1);
-//     }
-//     changeState(packet, false);
-//     console.log('remaining data length', receiveBuffer.length);
-//     console.log('payloadLength', payloadLength);
-//     }
-// };
 
 var Click = function (x, y, isDouble) {
     // transfer string to integer
@@ -267,12 +208,6 @@ var Click = function (x, y, isDouble) {
                         });
                 }
             }
-            // case GameState.Wait: {
-            // console.log("Wait & Move x, y", x, " ", y);
-            // this.gameMap[x][y] = this.opponentMap[x][y];
-            // this.state = GameState.Move;
-            //     this.isMyTurn
-            // }
         }
         ;
     } else {
@@ -651,8 +586,6 @@ var recvOpponentBoard = function (payload) {
     this.recvBoard = true;
 }
 
-// Game();
-// Game.prototype
 Game.prototype.AddOnePlane = AddOnePlane;
 Game.prototype.Click = Click;
 Game.prototype.WinCheck = WinCheck;
@@ -660,10 +593,5 @@ Game.prototype.coordinatePacket = coordinatePacket;
 Game.prototype.recvOpponentBoard = recvOpponentBoard;
 Game.prototype.initGame = initGame;
 Game.prototype.recvCoordinate = recvCoordinate;
-// Game.prototype.Chat.socket.on('data', Chat.socketDataCallback);
-// Game.prototype.Chat = Chat;
-
-// console.log(Game.prototype.isMyTurn);
-// console.log(Game.prototype.planeMap);
 
 module.exports = Game;

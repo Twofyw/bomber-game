@@ -74,7 +74,8 @@
                     <button class="badge btn-primary"
                             ng-style="$Chat.mapToColor($Chat.Game.prototype.gameMap[rowLabel][colLabel])"
                             ng-click="$Chat.Game.prototype.Click(rowLabel, colLabel, $Chat.isDoubleCord)"
-                            ng-disabled="$Chat.Game.prototype.gameMap[rowLabel][colLabel] % 10 != 9 || !$Chat.Game.prototype.isMyTurn || $Chat.sessionState != 11"
+                            ng-disabled="($Chat.Game.prototype.gameMap[rowLabel][colLabel] % 10 != 9 && $Chat.Game.prototype.gameMap[rowLabel][colLabel] % 10 != 2 && $Chat.Game.prototype.gameMap[rowLabel][colLabel] % 10 != 3)
+                                            || !$Chat.Game.prototype.isMyTurn || $Chat.sessionState != 11 || !$Chat.Game.prototype.recvBoard || ($Chat.Game.prototype.gameMap[rowLabel][colLabel] % 10 == 2 && $Chat.isDoubleCord == false) || ($Chat.Game.prototype.gameMap[rowLabel][colLabel] % 10 == 3 && $Chat.isDoubleCord == false)"
                     > </button>
                 </div>
             </div>

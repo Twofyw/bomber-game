@@ -1,38 +1,11 @@
 const Game = require('./app/services/game');
-// console.log('DEBUG Game', Game);
-// let game = new Game();
-// console.log('DEBUG game', game);
 
-// used as the first byte of data packets
-/*
 var PacketType = Object.freeze({
   "Info": 0x00,
-  "InfoResponse": 0x01,
+  "UsernameResponse": 0x01,
   "Password": 0x02,
   "PasswordResponse": 0x03,
   "Refuse": 0x04,
-  "Configuration": 0x05,
-  "SyncUserName": 0x06,
-  "History": 0x07,
-  "SyncEnd": 0x08,
-  "TextUsername": 0x09,
-  "Text": 0x0A,
-  "FileName": 0x0B,
-  "FileInProgress": 0x0C,
-  "GroupTextUserlist": 0x0D,
-  "FileEnd": 0x0E,
-  "FileUsername": 0x0F,
-})
-*/
-
-// ZZY
-var PacketType = Object.freeze({
-  "Info": 0x00,
-  "InfoResponse": 0x01,
-  "Password": 0x02,
-  "PasswordResponse": 0x03,
-  "Refuse": 0x04,
-  // "Configuration": 0x05,
   "SyncUserName": 0x06,
   "OnlineUser": 0x07,
   "SyncEnd": 0x08,
@@ -44,28 +17,8 @@ var PacketType = Object.freeze({
   "SingleCoord": 0x0D,
   "DoubleCoord": 0x0E,
   "GameOver": 0x0F,
-  "TextUsername": 0x99,
-  "Text": 0x9A,
-  "FileName": 0x9B,
-  "FileInProgress": 0x9C,
-  "GroupTextUserlist": 0x9D,
-  "FileEnd": 0x9E,
-  "FileUsername": 0x9F,
 });
 
-// Server response type
-/*
-var ResponseType = Object.freeze({
-  "UserNotExist": 0,
-  "OK": 1,
-  "ChangePassword": 2,
-  "Wrong": 3,
-  "ErrorOccurs": 4,
-  "AlreadyLoggedIn": 5,
-});
-*/
-
-// ZZY
 // Server response type
 var ResponseType = Object.freeze({
   "UserNotExist": 0,
@@ -75,78 +28,20 @@ var ResponseType = Object.freeze({
   "ErrorOccurs": 4,
   "AlreadyLoggedIn": 5,
   "Busy": 6,
-  "ChangePassword": 62
 });
 
-/*
-// TODO: adapt to client states
-// State machine definition
-// Defined almost sequentially. Actions corresponding to a state are in comments.
 var SessionState = Object.freeze({
-  "Init": 0, // send check
-  "WaitForInfoResponse": 1, // Match user in database, password not received yet
-  // If user exists, send a response
-  "WaitForPasswordResponse": 2, // Send UserCheck response
-  "UserExists": 3, // Branch #1, receive password and match password in database
-  "PasswordReset": 4, // First login. Receive new password and update database
-  "AlreadyLoggedIn": 5, // Kick off the logged in session
-  "UserSync": 6, // Merge #1, send preference
-  "HistorySync": 7, // Send history
-  "ClientWaiting": 8,
-  // Branch #2 and Merge #2, branch according to the media_type
-  // of the next packet (either received or sent).
-  // Send has priority over read.
-  "TextUsername": 9, // Target text username
-  "Text": 10, // Text data
-  "FileUsername": 11, // Target file username
-  "FileName": 12,
-  "FileInProgress": 13, // Until a FileEnd packet is received
-  "GroupUsernameList": 14, // Target group username list
-  "GroupText": 15, // Target group text data
-  // go back to ServerWaiting state
-});
-*/
-
-// Modified by ZZY.
-// TODO: adapt to client states
-// State machine definition
-// Defined almost sequentially. Actions corresponding to a state are in comments.
-var SessionState = Object.freeze({
-  "FirstThingsFirst": 0,
-  "Init": 1, // send check
-  "WaitForInfoResponse": 2, // Match user in database, password not received yet
+  "Init": 0,
+  "GatherUserInfo": 1, // send check
+  "WaitForUsernameResponse": 2, // Match user in database, password not received yet
   // If user exists, send a response
   "WaitForPasswordResponse": 3, // Send UserCheck response
-  "UserExists": 4, // Branch #1, receive password and match password in database
-  "PasswordReset": 5, // First login. Receive new password and update database
-  "AlreadyLoggedIn": 6, // Kick off the logged in session
-  "UserSync": 7, // Merge #1, send preference
+  "UserSync": 4, // Merge #1, send preference
   "ClientWaiting": 8,
   "ClientInvited": 9,
   "ClientInviting": 10,
-  //"Draw": 11,
   "InGame": 11,
-
-  "HistorySync": 67, // Send history
-  // Branch #2 and Merge #2, branch according to the media_type
-  // of the next packet (either received or sent).
-  // Send has priority over read.
-  "TextUsername": 69, // Target text username
-  "Text": 60, // Text data
-  "FileUsername": 61, // Target file username
-  "FileName": 62,
-  "FileInProgress": 63, // Until a FileEnd packet is received
-  "GroupUsernameList": 64, // Target group username list
-  "GroupText": 65, // Target group text data
-  // go back to ServerWaiting state
-  // ZZY
-  "GreatWall": 99
 });
-
-
-// data naming:
-// @rawData: { packetType, payload }
-// packet: Buffer
 
 angular
     .module(DEFAULT.PKG('chat'), [DEFAULT.PKG('socket'), DEFAULT.PKG('settings')])
@@ -166,7 +61,6 @@ angular
         var clickedInviteButton = false;
         var personInvited;
         var notResponsingInvitation = true;
-        // var rivalName = "";
 
         var ChatService = function (socket, settings) {
 
@@ -188,7 +82,7 @@ angular
             };
           };
 
-          ChatService.prototype.sessionState = SessionState.FirstThingsFirst;
+          ChatService.prototype.sessionState = SessionState.Init;
           ChatService.prototype.refresh = function() {
             console.log("refresh");
             this.sessionState = SessionState.ClientWaiting;
@@ -199,11 +93,6 @@ angular
 
           ChatService.prototype.rowLabels = Array.apply(null, { length: 10 }).map(Number.call, Number);
           ChatService.prototype.colLabels = Array.apply(null, { length: 10 }).map(Number.call, Number);
-          // debug
-          // ChatService.prototype.gameMap = [];
-          // for(let i = 0; i < 10; i++) {
-          //   ChatService.prototype.gameMap.push(Array.apply(null,{length: 10}).map(function() { return 0; }));
-          // }
           ChatService.prototype.gameMap = [
             [0,1,2,3,4,5,6,7,8,9],
             [0,0,0,0,0,0,0,0,0,0],
@@ -332,12 +221,6 @@ angular
           globalSelf.socket.on('data', globalSelf.socketDataCallback);
           globalSelf.socket.on('close', globalSelf.socketClose);
 
-          // Start the authentication
-          // globalSelf.autoconnect();
-
-          // ZZY
-          // game.testSth("omg");
-          // globalSelf.Game.prototype.testSth("omg");
           globalSelf.changeState();
         };
 
@@ -394,31 +277,6 @@ angular
           }; // rawData
         };
 
-        // ChatService.prototype.socketClose = function socketClose() {
-        //   // if state is kicked off, pop up a dialog and destroy socket
-        //   if (!alertPoped) {
-        //     smalltalk.alert('Warning', 'Server offline, please contact the administrator of the server.');
-        //     alertPoped = true;
-        //   }
-        //   // globalSocket.destroy();
-        //   // console.log(globalSelf);
-        //   globalSelf.cache.connected = false;
-        //   wasConnected = true;
-        //
-        //   function tryReconnect() {
-        //     console.log('socketClose', globalSocket);
-        //     console.log('Trying to reconnect...');
-        //     ChatService.prototype.sessionState = SessionState.Init;
-        //     globalSelf.connect();
-        //     // if (!globalSelf.connected()) {
-        //     //setTimeout(tryReconnect, 1000);
-        //     // }
-        //   }
-        //   // otherwise reconnect
-        //   setTimeout(tryReconnect, 1000);
-        // };
-
-        // ZZY
         ChatService.prototype.socketClose = function socketClose() {
 
           smalltalk.alert('Warning', 'Server offline, please contact the administrator of the server. Press OK to reconnect.').then(
@@ -430,11 +288,8 @@ angular
                 function tryReconnect() {
                   console.log('socketClose', globalSocket);
                   console.log('Trying to reconnect...');
-                  ChatService.prototype.sessionState = SessionState.Init;
+                  ChatService.prototype.sessionState = SessionState.GatherUserInfo;
                   globalSelf.connect();
-                  // if (!globalSelf.connected()) {
-                  //setTimeout(tryReconnect, 1000);
-                  // }
                 }
                 // otherwise reconnect
                 setTimeout(tryReconnect, 500);
@@ -581,37 +436,6 @@ angular
           // Put user information in the settings
           globalSelf.settings.user(data);
 
-          // use remoteAddress to detect connection status
-          // console.log(self.socket.remoteAddress, !self.connected(), globalSelf.user());
-          // if (self.socket.remoteAddress && !self.connected() && globalSelf.user()) {
-
-          //   console.log('unexpected connect() called, globalSelf.socket.remoteAddress',
-          //     globalSelf.socket.remoteAddress);
-          //   console.log('self.connected()', globalSelf.connected());
-          //   console.log('self.user()', globalSelf.user());
-          //   // record user data
-          //   globalSelf.initiateLoginSequence(data);
-
-          // globalSelf.socket.emit('user.login', globalSelf.user(), function (response) {
-
-          //   // TODO: Wrap emitter in socket service
-          //   $rootScope.$apply(function () {
-          //     // Put the chat information in the cache
-          //     globalSelf.cache.connected = true;
-          //     globalSelf.cache.timestamp = globalSelf.cache.timestamp || Date.now();
-          //     globalSelf.cache.room = response.room;
-          //     globalSelf.cache.messages = response.messages;
-
-          //     // Put user information in the settings
-          //     globalSelf.settings.user(response.user);
-
-          //     // Log the result and ack
-          //     console.log(response);
-          //     (ack || angular.noop)();
-          //   });
-          // });
-          // } else if () { // startup
-          // } else { // startup
           // Connect the socket
           if (!globalSelf.connected()){
             console.log('Connecting');
@@ -646,7 +470,6 @@ angular
                 globalPassword = value;
                 $rootScope.$apply();
                 //globalSelf.connect();
-                //ZZY
                 if (!globalSelf.connected()) {
                   globalSelf.connect();
                 } else {
@@ -719,14 +542,6 @@ angular
               body: text[0]
             });
             console.log(globalSelf.cache.messages);
-
-            // $rootScope.$apply(function () {
-            //   globalSelf.cache.messages.push({
-            //     username: globalUsername,
-            //     user: globalUsername,
-            //     body: text[1]
-            //   });
-            // });
 
             setTimeout(function () {
               jQuery(".messages").getNiceScroll(0).resize();
@@ -835,9 +650,6 @@ angular
             // 第一次连接
             globalSelf.cache.connected = true;
           }
-          // if (globalSelf.connected() && wasConnected) {
-          //   smalltalk.alert('Connection restored');
-          //   wasConnected = false;
           // }
           data = {
             username: globalUsername,
@@ -858,17 +670,6 @@ angular
           $rootScope.$apply(function () {
             // Put the chat information in the cache
             globalSelf.cache.connected = true;
-            // globalSelf.cache.timestamp = globalSelf.cache.timestamp || Date.now();
-            // globalSelf.cache.room = response.room;
-            // globalSelf.cache.messages = response.messages;
-
-            // // Put user information in the settings
-            // globalSelf.settings.user(response.user);
-
-            // Log the result and ack
-            // console.log(response);
-            // (ack || angular.noop)();
-
           });
         };
 
@@ -892,9 +693,7 @@ angular
         };
         var constructPacket = ChatService.prototype.constructPacket;
 
-        // Init: send check packet, original one.
-
-        // Modified by ZZY
+        // GatherUserInfo: send check packet, original one.
 
         ChatService.prototype.changeState = function (rawData, isSend) {
           // @rawData: { packetType: int, payload: Buffer }
@@ -953,15 +752,6 @@ angular
               // Busy gaming
               console.log(ChatService.prototype.sessionState);
               console.log('busy gaming');
-              /*
-              const buf = Buffer.allocUnsafe(1);
-              buf.writeUInt8(ResponseType.Busy, 0);
-              let packet = constructPacket({
-                packetType: PacketType.InvitResponse,
-                payload: buf
-              });
-              sendPacket(packet);
-               */
               return;
             }
             else if (rawData.packetType == PacketType.GameOver) {
@@ -996,30 +786,21 @@ angular
             }
           }
 
-          console.log("Debug1", ChatService.prototype.sessionState);
           switch (ChatService.prototype.sessionState) {
-            case SessionState.GreatWall:
-              console.log('Howdy! This is temporarily the end!');
-              console.log('hasValidUser: ', Chat.hasValidUser);
-              console.log('validOnline: ', globalSelf.validOnline());
-              console.log('globalSelf.opponentName', globalSelf.opponentName);
-              console.log('user: ', globalSelf.user());
-              smalltalk.alert('Warning', '目前暂时在这里告一段落，再见！');
-              break;
-            case SessionState.FirstThingsFirst:
+            case SessionState.Init:
               Chat.hasValidUser = false;
               console.log('app start');
-              ChatService.prototype.sessionState = SessionState.Init;
+              ChatService.prototype.sessionState = SessionState.GatherUserInfo;
               globalSelf.autoconnect();
               break;
-            case SessionState.Init:
+            case SessionState.GatherUserInfo:
               console.log('info', rawData);
               sendPacket(rawData);
-              ChatService.prototype.sessionState = SessionState.WaitForInfoResponse;
+              ChatService.prototype.sessionState = SessionState.WaitForUsernameResponse;
               break;
-            case SessionState.WaitForInfoResponse:
-              console.log('WaitForInfoResponse');
-              if (rawData.packetType != PacketType.InfoResponse) {
+            case SessionState.WaitForUsernameResponse:
+              console.log('WaitForUsernameResponse');
+              if (rawData.packetType != PacketType.UsernameResponse) {
                 // error
                 console.log('rawData.packetType: '+ rawData.packetType);
                 smalltalk.alert('Warning', 'Wrong TCP packet from server rawData.packetType: ' + rawData.packetType).then(
@@ -1029,7 +810,7 @@ angular
                 );
               } else {
                 // decode payload here
-                console.log('InfoResponse: data.payload', rawData.payload);
+                console.log('UsernameResponse: data.payload', rawData.payload);
                 console.log('rawData', rawData);
                 let infoData = rawData.payload.readUInt8(0);
                 switch (infoData) {
@@ -1039,7 +820,7 @@ angular
                     smalltalk.alert('Warning', 'Username not exist, please Log in again.').then(
                         function() {
                           Chat.hasValidUser = false;
-                          ChatService.prototype.sessionState = SessionState.FirstThingsFirst;
+                          ChatService.prototype.sessionState = SessionState.Init;
                           changeState();
                         }
                     );
@@ -1099,7 +880,7 @@ angular
                     smalltalk.alert('Warning', 'Wrong password, please Log in again.').then(
                         function() {
                           Chat.hasValidUser = false;
-                          ChatService.prototype.sessionState = SessionState.FirstThingsFirst;
+                          ChatService.prototype.sessionState = SessionState.Init;
                           changeState();
                         }
                     );
@@ -1331,7 +1112,6 @@ angular
         // }, 1000);
         var sendPacket = ChatService.prototype.sendPacket;
 
-        // ZZY
         ChatService.prototype.killConnection = function killConnection() {
           try {
             // Quit the whole app, without a name there's nothing to do
@@ -1351,19 +1131,12 @@ angular
           return username;
         };
 
-        // ChatService.prototype.decodeTextPacket = function (rawData) {
-        //   let text = rawData.payload.toString();
-        //
-        //   return text;
-        // };
-
         // game logic
         let chatInstance = new ChatService($Socket.socket, $Settings);
         console.log('chatInstance', chatInstance);
         ChatService.prototype.Game = Game(chatInstance);
 
         // Instantiates a new chat service
-        // Chat.prototype.SessionState = SessionState.FirstThingsFirst;
         return chatInstance;
 
 
